@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>アクアリウムライフ 3D 〜カニとクマノミとチンアナゴと ゆかいななかまたち〜</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>html,body{margin:0;padding:0;background:#04263c}</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { useState, useEffect, useRef, useCallback } = React;
+const STORAGE_KEY = "aquarium-life-3d-v4";
+const SATIETY_DECAY = 100 / (8 * 3600);
+const QUALITY_DECAY = 100 / (72 * 3600);
+const MAX_BUDDIES = 10;
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const FOODS = [
+  { id: "flake", name: "フレーク", emoji: "🟡", desc: "みんなの定番", sat: 4, sink: 0.5 },
+  { id: "shrimp", name: "ブラインシュリンプ", emoji: "🦐", desc: "クマノミの大好物", sat: 6, sink: 0.8, fav: "fish" },
+  { id: "clam", name: "アサリ", emoji: "🐚", desc: "カニ＆ヤドカリの大好物", sat: 8, sink: 2, fav: "crab" },
+  { id: "plankton", name: "プランクトン", emoji: "✨", desc: "チンアナゴ・クラゲ・イソギンチャクの大好物", sat: 3, sink: 0.22, fav: "eeljelly" },
+  { id: "gochiso", name: "ごちそう", emoji: "🍱", desc: "豪華！みんな大よろこび", sat: 12, sink: 0.7 },
+  { id: "yabai", name: "やばいめし", emoji: "☠️", desc: "満腹だけど水がにごる…", sat: 10, sink: 0.9, qual: -8 },
+  { id: "jiro", name: "二郎系", emoji: "🍜", desc: "マシマシ。食後はうごけない", sat: 20, sink: 1.2, qual: -12, sleepy: true },
+  { id: "tanita", name: "タニタ", emoji: "🥗", desc: "健康的！水質にもやさしい", sat: 5, sink: 0.6, qual: 3 }
+];
+const MODES = {
+  hidamari: { label: "☀️ ひだまり", bg: 8308968, fog: 6732e3, back: 4168908, amb: [16773848, 0.85], sun: [16771512, 1.2], neonA: 0, neonB: 0, emissive: 0 },
+  night: { label: "🌃 ナイトプール", bg: 462114, fog: 660016, back: 858168, amb: [3359863, 0.35], sun: [6719743, 0.15], neonA: 1.6, neonB: 1.6, emissive: 1 },
+  storm: { label: "⛈️ 大嵐", bg: 3752526, fog: 3752526, back: 2897216, amb: [10134704, 0.45], sun: [12109008, 0.4], neonA: 0, neonB: 0, emissive: 0 },
+  carnival: { label: "🎆 カーニバル", bg: 526356, fog: 526356, back: 855332, amb: [6710954, 0.42], sun: [10066380, 0.15], neonA: 0.5, neonB: 0.5, emissive: 1 },
+  dance: { label: "🪩 おどりおどり", bg: 1312810, fog: 1312810, back: 1903930, amb: [8939263, 0.5], sun: [16777215, 0.2], neonA: 1.5, neonB: 1.5, emissive: 1 },
+  fever: { label: "🌈 大当たり", bg: 16711850, fog: 16711850, back: 11141239, amb: [16777215, 0.8], sun: [16777215, 0.5], neonA: 2, neonB: 2, emissive: 1 }
+};
+const KIND_LIST = ["fish", "katsuo", "eel", "crab", "jelly", "hermit", "anemone"];
+const PERSONAS = {
+  fish: {
+    name: "カノン",
+    emoji: "🐠",
+    title: "クマノミ",
+    prompt: "あなたは海水水槽に住むクマノミの「カノン」。元気いっぱいで人懐っこい。語尾は「〜だよっ」「〜なの！」。ブラインシュリンプが大好物。",
+    fallback: ["きょうもいっぱい泳いだよっ！🐠", "イソギンチャク、ふかふかで最高なの！", "ねえねえ、ブラインシュリンプまだ〜？✨", "水流サーフィン、見ててほしいの！"]
+  },
+  katsuo: {
+    name: "ドキドキカツオブシ",
+    emoji: "🐟",
+    title: "カツオ",
+    prompt: "あなたは海水水槽を高速で泳ぎ回るカツオの「ドキドキカツオブシ」。超熱血スピード自慢で「〜だッ！」口調。名前の由来は鰹節の話題が出るとドキドキしてしまうから。泳ぎを止めると落ち着かない。",
+    fallback: ["今日も水槽3周のベスト更新だッ！🐟", "か、鰹節の話はやめてくれッ…ドキドキするだろ…！", "止まったら負けな気がするんだッ！", "オレの背中の青、キマってるだろ？"]
+  },
+  eel: {
+    name: "にょろ",
+    emoji: "🌊",
+    title: "チンアナゴ",
+    prompt: "あなたは海水水槽に住むチンアナゴの「にょろ」。ビビリで控えめな敬語キャラ。驚くと「びっ…！」と砂に引っ込む。プランクトンが大好物。占いが特技。",
+    fallback: ["び、びっくりさせないでくださいね…！", "今日も砂のおうちは快適です…ゆらゆら…", "プランクトン、流れてこないかなぁ…", "占い、またやりますね…ひっそりと…"]
+  },
+  crab: {
+    name: "ガニ夫",
+    emoji: "🦀",
+    title: "カニ",
+    prompt: "あなたは海水水槽に住むカニの「ガニ夫」。職人気質の兄貴分。「〜だぜ」口調。砂掘りが得意で脱皮の話をしたがる。アサリが大好物。",
+    fallback: ["今日もいい砂掘れたぜ🦀", "そろそろ脱皮の予感がするんだよなあ…", "アサリ落ちてこねえかな、待ってるぜ", "ヤドカリの兄弟ともよろしくやってるぜ"]
+  },
+  jelly: {
+    name: "ぷる",
+    emoji: "🪼",
+    title: "クラゲ",
+    prompt: "あなたは海水水槽に漂うクラゲの「ぷる」。ふわふわマイペース。「〜なのー」口調。ネオンで光るのが自慢。",
+    fallback: ["ふよ〜…きょうも水がきもちいいのー🪼", "ナイトプールのとき、ぷる、光るんだよー✨", "いそがない、いそがない、なのー…", "嵐の日はぐるぐるしちゃうのー…"]
+  },
+  hermit: {
+    name: "ヤドん",
+    emoji: "🐚",
+    title: "ヤドカリ",
+    prompt: "あなたは海水水槽に住むヤドカリの「ヤドん」。引っ込み思案だけどマイホーム（貝殻）自慢。「〜っす」口調。びっくりすると殻にこもる。アサリが大好物。",
+    fallback: ["この貝殻、けっこういい物件っす🐚", "び、びっくりしたら殻にこもるっす…", "そろそろ引っ越し（殻替え）を検討中っす", "ガニ夫先輩には頭が上がらないっす"]
+  },
+  anemone: {
+    name: "いそじい",
+    emoji: "🌸",
+    title: "イソギンチャク",
+    prompt: "あなたは海水水槽に根を張るイソギンチャクの「いそじい」。のんびりした長老。「〜じゃのう」口調。動かないが全部見ている。カノンの大家さん。",
+    fallback: ["今日も水槽は平和じゃのう…🌸", "カノンはうちの大事な店子じゃよ", "わしは動かんが、ぜんぶ見ておるぞい", "嵐の日もわしは根性で耐えるんじゃ"]
+  }
+};
+const HOBBIES = {
+  fish: ["イソギンチャクのふかふか調査", "泡を追いかけっこ", "縞模様のお手入れ", "水流サーフィン", "水槽一周タイムアタック"],
+  katsuo: ["水槽高速3周チャレンジ", "急ターンの練習", "ヒレの空気抵抗チェック", "だれよりも速く起きる", "背中の青をみがく"],
+  eel: ["ゆらゆらシンクロ練習", "砂のおうちのリフォーム", "おとなりさんの観察", "占いの研究", "深呼吸（砂の中で）"],
+  crab: ["ひとり砂掘り選手権", "岩登りトレーニング", "脱皮の準備運動", "ハサミのメンテナンス", "いい砂探しの旅"],
+  jelly: ["水流に身をまかせる旅", "ネオンで光る練習", "ぼーっとすること", "ふわふわ昼寝", "傘のストレッチ"],
+  hermit: ["物件（貝殻）の内見", "殻みがき", "砂浜の思い出にひたる", "引っ越しの妄想", "岩かげでひと休み"],
+  anemone: ["触手のストレッチ", "水槽ウォッチング", "家賃（ふかふか）の提供", "光合成ごっこ", "長考"]
+};
+const FAV_FOOD = { katsuo: "ブラインシュリンプ🦐", fish: "ブラインシュリンプ🦐", eel: "プランクトン✨", crab: "アサリ🐚", jelly: "プランクトン✨", hermit: "アサリ🐚", anemone: "プランクトン✨" };
+const NAMES = {
+  fish: ["カノン", "マリン", "チェリー", "タイダル"],
+  katsuo: ["ドキドキカツオブシ", "カツ丸", "ブシ子", "タタキ"],
+  eel: ["にょろ", "にょき", "ちん之介", "すなお"],
+  crab: ["ガニ夫", "ガニ江", "ホライゾン", "ザワ"],
+  jelly: ["ぷる", "ふわ", "ぽよ", "くらりん"],
+  hermit: ["ヤドん", "カラ吉", "マイホ", "シェル美"],
+  anemone: ["いそじい", "いそばあ"]
+};
+const STATIONS = ["中山駅", "桜木町駅", "海芝浦駅", "みなとみらい駅", "新杉田駅", "江ノ島駅", "鶴見駅", "石川町駅"];
+const ROLES = ["見回り担当", "癒やし担当", "砂掘り担当", "発光担当", "受付担当", "占い担当", "警備担当"];
+const ORIGINS = {
+  fish: ["沖縄の海", "グレートバリアリーフ", "熱帯魚ショップ生まれ", "サンゴ礁の村"],
+  katsuo: ["黒潮のド真ん中", "太平洋の大回遊コース", "土佐沖", "カツオの群れの先頭"],
+  eel: ["伊豆の砂地", "南国の白い砂", "すみだの水族館のとなり", "沖合の砂丘"],
+  crab: ["磯のタイドプール", "岩場のすき間", "干潟", "防波堤のふもと"],
+  jelly: ["外洋をふわふわ", "深海のちょっと手前", "水族館のバックヤード", "湾内の流れ"],
+  hermit: ["浜辺の貝殻畑", "磯だまり", "漂着した流木のそば", "砂浜のすみっこ"],
+  anemone: ["サンゴ礁のすき間", "岩のくぼみ", "昔からこの水槽", "潮だまりの長老の家系"]
+};
+const SECRETS = [
+  "実は夜ふかししがち",
+  "エサを1個かくしてる",
+  "ヒーターの前をこっそり独占してる",
+  "脱皮の殻をコレクションしてる",
+  "ほんとうは目立ちたがり",
+  "占いの結果をたまに信じてない",
+  "水換えの日が少しこわい",
+  "泡を数えるのが日課",
+  "二郎系を3回おかわりしたことがある",
+  "大当たりの日に光る練習をしてる"
+];
+const MENU_TABS = [
+  { id: "care", label: "🍽️ おせわ" },
+  { id: "light", label: "💡 ライト" },
+  { id: "status", label: "📊 ようす" },
+  { id: "play", label: "🎲 あそぶ" }
+];
+const OUTFITS = [
+  { id: "none", label: "なし" },
+  { id: "hat", label: "🎩 ハット" },
+  { id: "ribbon", label: "🎀 リボン" },
+  { id: "crown", label: "👑 クラウン" }
+];
+const FQ = [
+  { q: "今朝の目覚めはどうだった？", opts: [{ t: "すっきり！", d: 14 }, { t: "まあまあ", d: 5 }, { t: "砂から出たくない…", d: -9 }] },
+  { q: "今日とくに気になるのは？", opts: [{ t: "仕事・勉強", d: 8 }, { t: "恋愛", d: 10 }, { t: "お金", d: 6 }, { t: "人間関係", d: 7 }] },
+  { q: "いまの心の天気は？", opts: [{ t: "快晴☀️", d: 15 }, { t: "くもり☁️", d: 4 }, { t: "雨🌧️", d: -6 }, { t: "嵐⛈️", d: -12 }] }
+];
+const defaultStats = { satiety: 80, quality: 95, temp: 25, heater: 25 };
+const defaultOutfits = { fish: "none", katsuo: "none", eel: "none", crab: "none", jelly: "none", hermit: "none", anemone: "none" };
+const persistMem = { v: null };
+const persist = {
+  async get(k) {
+    try {
+      if (typeof window !== "undefined" && window.storage) {
+        const r = await window.storage.get(k);
+        return r ? r.value : null;
+      }
+    } catch (e) {
+    }
+    try {
+      return localStorage.getItem(k);
+    } catch (e) {
+    }
+    return persistMem.v;
+  },
+  async set(k, v) {
+    try {
+      if (typeof window !== "undefined" && window.storage) {
+        await window.storage.set(k, v);
+        return;
+      }
+    } catch (e) {
+    }
+    try {
+      localStorage.setItem(k, v);
+      return;
+    } catch (e) {
+    }
+    persistMem.v = v;
+  }
+};
+async function callClaude(messages) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1200, messages })
+  });
+  const data = await res.json();
+  if (!data.content) throw new Error("no content");
+  return data.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+}
+function hashStr(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = h * 31 + str.charCodeAt(i) >>> 0;
+  return h;
+}
+function localFortune(answers, charge) {
+  const h = hashStr((/* @__PURE__ */ new Date()).toDateString() + answers.join(""));
+  const pick = (arr, k) => arr[(h >> k) % arr.length];
+  const bias = Math.round((charge - 50) / 22);
+  const stars = (k) => clamp(2 + (h >> k) % 4 + bias, 1, 5);
+  const pw = clamp(Math.round((1 + h % 999999) * (0.4 + charge / 100)), 1, 999999);
+  return {
+    sogo: { stars: stars(2), text: pick(["几帳面さが光る日。小さな整理整頓が大きな幸運を呼びます。", "観察眼が冴える日。気づきをメモすると吉。", "完璧を求めすぎず7割でOKと思うと、流れが良くなります。"], 3) },
+    love: { stars: stars(5), text: pick(["細やかな気配りが相手の心にしみる日。", "聞き役に回ると距離がぐっと縮まります。", "好きなものの話を素直にすると魅力が伝わる日。"], 6) },
+    work: { stars: stars(8), text: pick(["分析力が絶好調。ダブルチェックで評価アップ。", "後回しの細かいタスクを片付けると運気上昇。", "段取りを最初に決めるとスムーズです。"], 9) },
+    money: { stars: stars(11), text: pick(["固定費をひとつ見直すと吉。", "衝動買い注意。一晩寝かせてから判断を。", "コツコツ貯金が幸運の鍵。"], 12) },
+    power: { value: pw, text: pick(["チンアナゴ界では…かなりの強さです…", "今日は砂の上に堂々と出ていられる数値です…", "び、びっくりするほど高めです…！"], 13) },
+    station: pick(["海芝浦駅（ホームのすぐ横が海です…）", "桜木町駅（海風がラッキーを運びます…）", "江ノ島駅（水の気配が吉…）", "中山駅（落ち着く流れがあります…）"], 14),
+    pachinko: pick(["CRチンアナゴ大開花〜砂からこんにちは〜", "Pぷるぷるクラゲ光線FEVER", "ぱちんこ 水槽のなかまたち99ver.", "Pヤドカリ無双〜マイホーム大当たり〜"], 15),
+    snack: pick(["塩ラムネ（ミネラル補給が吉…）", "ハードグミ（噛むと集中力アップです…）", "バウムクーヘン（年輪のように運が重なります…）", "チョコミント系（頭が冴えます…）"], 16),
+    lucky_item: pick(["砂時計", "白いタオル", "縞模様の小物", "貝殻モチーフ"], 17),
+    lucky_color: pick(["サンゴオレンジ", "ラグーンブルー", "砂浜ベージュ", "ネオンパープル"], 18),
+    hitokoto: pick(["びっくりしても、また顔を出せば大丈夫です…！", "ゆらゆら、自分のペースでいきましょう…", "今日のあなたは、砂の上に出ていて大丈夫な日です！"], 19)
+  };
+}
+function creatureMood(kind, seed, s) {
+  const h = hashStr((/* @__PURE__ */ new Date()).toDateString() + kind + seed);
+  const tempOk = s.temp >= 24 && s.temp <= 27;
+  const genki = clamp(Math.round(s.satiety * 0.5 + s.quality * 0.3 + (tempOk ? 20 : 8) + (h % 11 - 5)), 5, 100);
+  const yaruki = clamp(30 + h % 56 + Math.round((s.satiety - 50) / 4), 5, 100);
+  const hobby = HOBBIES[kind][h % HOBBIES[kind].length];
+  return { genki, yaruki, hobby };
+}
+function instProfile(kind, seed) {
+  const sd = seed >>> 0;
+  const days = 1 + (sd >> 3) % 7;
+  return {
+    station: STATIONS[sd % STATIONS.length],
+    shift: "週" + days + "日（" + ROLES[(sd >> 6) % ROLES.length] + "）",
+    origin: ORIGINS[kind][(sd >> 9) % ORIGINS[kind].length],
+    secret: SECRETS[(sd >> 12) % SECRETS.length]
+  };
+}
+const THOUGHTS = {
+  hungry: ["おなかすいた…エサまだかな…", "エサのことしか考えられない…", "ごはん…ごはん…"],
+  dirty: ["お水がにごってきたかも…", "そろそろ水換えしてほしいな…"],
+  storm: ["めがまわる〜〜🌀", "せんたくきだ〜〜！", "つかまる所がない〜！"],
+  dance: ["ノッてきた〜！🪩", "音が…体にひびく…！", "とまらない！！"],
+  fever: ["まぶしい！でも好き！", "当たる気しかしない🌈"],
+  fish: ["イソギンチャクでお昼寝しようかな", "縞模様、今日もキマってる", "さっき泡を3つ数えた"],
+  katsuo: ["止まったら負けな気がするッ", "削られたくない…ドキドキ…", "次は水槽3周いくぞッ！"],
+  eel: ["砂の中、今日もいい感じ…", "となりの子より高く伸びたい…", "びっくりしたくないなあ…"],
+  crab: ["この砂、掘りごたえあるぜ", "脱皮のタイミングいつにすっかな", "ハサミの調子は上々だぜ"],
+  jelly: ["ふわふわ…むしんろん…", "考えない、のがコツなのー", "水流に身をまかせ中…"],
+  hermit: ["そろそろ広い殻に住みたいっす", "家賃ゼロ、最高っす", "殻の中を模様替えしたっす"],
+  anemone: ["今日も水槽は平和じゃのう", "カノンの帰りを待っとるんじゃ", "動かぬが勝ちじゃ"]
+};
+function instThought(inst, s, mk) {
+  const slot = Math.floor(Date.now() / 9e3);
+  const pick = (arr) => arr[(slot + inst.seed) % arr.length];
+  if (mk === "storm") return pick(THOUGHTS.storm);
+  if (mk === "dance") return pick(THOUGHTS.dance);
+  if (mk === "fever") return pick(THOUGHTS.fever);
+  if (s.satiety < 25) return pick(THOUGHTS.hungry);
+  if (s.quality < 35) return pick(THOUGHTS.dirty);
+  return pick(THOUGHTS[inst.kind]);
+}
+function wxEmoji(code) {
+  if (code === 0) return "☀️";
+  if (code <= 2) return "🌤️";
+  if (code === 3) return "☁️";
+  if (code <= 48) return "🌫️";
+  if (code <= 67) return "🌧️";
+  if (code <= 77) return "❄️";
+  if (code <= 82) return "🌦️";
+  return "⛈️";
+}
+function makeAccessory(id) {
+  const g = new THREE.Group();
+  if (id === "hat") {
+    const m = new THREE.MeshStandardMaterial({ color: 2829107, roughness: 0.5 });
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16), m);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.18, 0.3, 16), m);
+    top.position.y = 0.16;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.06, 16), new THREE.MeshStandardMaterial({ color: 15228318 }));
+    band.position.y = 0.05;
+    g.add(brim, top, band);
+  } else if (id === "ribbon") {
+    const m = new THREE.MeshStandardMaterial({ color: 16744368, roughness: 0.5 });
+    const l = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.3, 4), m);
+    l.rotation.z = Math.PI / 2;
+    l.position.x = -0.17;
+    const r = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.3, 4), m);
+    r.rotation.z = -Math.PI / 2;
+    r.position.x = 0.17;
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), m);
+    g.add(l, r, c);
+  } else if (id === "crown") {
+    const gold = new THREE.MeshStandardMaterial({ color: 16765514, emissive: 11175936, emissiveIntensity: 0.3, roughness: 0.35 });
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.23, 0.16, 12), gold);
+    g.add(base);
+    for (let i = 0; i < 4; i++) {
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 6), gold);
+      const a = i / 4 * Math.PI * 2;
+      sp.position.set(Math.cos(a) * 0.17, 0.14, Math.sin(a) * 0.17);
+      g.add(sp);
+    }
+  }
+  return g;
+}
+function buildAvatarModel(type) {
+  const group = new THREE.Group();
+  let mouth = null;
+  const dark = new THREE.MeshBasicMaterial({ color: 3351082 });
+  if (type === "fish") {
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 16), new THREE.MeshStandardMaterial({ color: 16744234, roughness: 0.5 }));
+    body.scale.set(1.4, 0.9, 0.62);
+    group.add(body);
+    [-0.28, 0.18].forEach((x) => {
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.13, 1.02, 0.74), new THREE.MeshStandardMaterial({ color: 16777215 }));
+      st.position.x = x;
+      group.add(st);
+    });
+    [0.2, -0.2].forEach((z) => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), dark);
+      e.position.set(0.58, 0.12, z);
+      group.add(e);
+    });
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 4), new THREE.MeshStandardMaterial({ color: 16751957 }));
+    tail.rotation.z = Math.PI / 2;
+    tail.scale.z = 0.3;
+    tail.position.x = -0.95;
+    group.add(tail);
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), dark);
+    mouth.position.set(0.76, -0.05, 0);
+    mouth.scale.set(0.7, 0.45, 0.6);
+    group.add(mouth);
+    group.position.y = 0.35;
+  } else if (type === "katsuo") {
+    const top = new THREE.MeshStandardMaterial({ color: 2771594, roughness: 0.4, metalness: 0.3 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 22, 14), top);
+    body.scale.set(1.9, 0.75, 0.6);
+    group.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.5, 22, 14), new THREE.MeshStandardMaterial({ color: 14214382, metalness: 0.4, roughness: 0.35 }));
+    belly.scale.set(1.8, 0.64, 0.56);
+    belly.position.y = -0.1;
+    group.add(belly);
+    [0.2, -0.2].forEach((z) => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), dark);
+      e.position.set(0.7, 0.1, z);
+      group.add(e);
+    });
+    const tMat = new THREE.MeshStandardMaterial({ color: 3362942 });
+    [1, -1].forEach((sd) => {
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.5, 6), tMat);
+      fin.position.set(-1.05, sd * 0.16, 0);
+      fin.rotation.z = sd * 2.3;
+      group.add(fin);
+    });
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), dark);
+    mouth.position.set(0.92, -0.04, 0);
+    mouth.scale.set(0.7, 0.45, 0.6);
+    group.add(mouth);
+    group.position.y = 0.35;
+  } else if (type === "eel") {
+    const mat = new THREE.MeshStandardMaterial({ color: 16118762, roughness: 0.6 });
+    const bodyGeo = new THREE.CylinderGeometry(0.17, 0.21, 1.5, 12);
+    bodyGeo.translate(0, 0.75, 0);
+    const body = new THREE.Mesh(bodyGeo, mat);
+    body.position.y = -0.6;
+    group.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), mat);
+    head.position.y = 0.9;
+    group.add(head);
+    [-0.07, 0.07].forEach((x) => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), dark);
+      e.position.set(x, 0.98, 0.14);
+      group.add(e);
+    });
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), dark);
+    mouth.position.set(0, 0.84, 0.16);
+    mouth.scale.set(0.9, 0.45, 0.6);
+    group.add(mouth);
+    group.position.y = 0.15;
+  } else if (type === "crab" || type === "hermit") {
+    const mat = new THREE.MeshStandardMaterial({ color: type === "crab" ? 15158332 : 15238234, roughness: 0.6 });
+    if (type === "hermit") {
+      const shell = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), new THREE.MeshStandardMaterial({ color: 10121034, roughness: 0.7 }));
+      shell.position.set(0, 0.45, -0.3);
+      group.add(shell);
+      const swirl = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.06, 8, 14), new THREE.MeshStandardMaterial({ color: 8016954 }));
+      swirl.position.set(0, 0.5, -0.3);
+      swirl.rotation.y = Math.PI / 6;
+      group.add(swirl);
+    }
+    const body = new THREE.Mesh(new THREE.SphereGeometry(type === "crab" ? 0.5 : 0.32, 16, 12), mat);
+    body.scale.set(1.25, 0.7, 1);
+    body.position.set(0, 0.25, type === "hermit" ? 0.22 : 0);
+    group.add(body);
+    [-0.16, 0.16].forEach((x) => {
+      const z0 = type === "hermit" ? 0.32 : 0.12;
+      const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.26, 6), mat);
+      stalk.position.set(x, 0.55, z0);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: 16777215 }));
+      eye.position.set(x, 0.7, z0);
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), dark);
+      pupil.position.set(x, 0.7, z0 + 0.07);
+      group.add(stalk, eye, pupil);
+    });
+    [-1, 1].forEach((sd) => {
+      const claw = new THREE.Mesh(new THREE.SphereGeometry(type === "crab" ? 0.2 : 0.14, 10, 8), mat);
+      claw.position.set(sd * 0.6, 0.12, type === "hermit" ? 0.35 : 0.18);
+      group.add(claw);
+    });
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), dark);
+    mouth.position.set(0, 0.3, type === "hermit" ? 0.55 : 0.48);
+    mouth.scale.set(1.1, 0.45, 0.5);
+    group.add(mouth);
+  } else if (type === "anemone") {
+    const pm = new THREE.MeshStandardMaterial({ color: 16752304, roughness: 0.6 });
+    for (let i = 0; i < 9; i++) {
+      const tg = new THREE.CylinderGeometry(0.05, 0.07, 0.9, 6);
+      tg.translate(0, 0.45, 0);
+      const tn = new THREE.Mesh(tg, pm);
+      const a = i / 9 * Math.PI * 2;
+      tn.position.set(Math.cos(a) * 0.26, 0.12, Math.sin(a) * 0.26);
+      tn.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5);
+      group.add(tn);
+    }
+    const base = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8), new THREE.MeshStandardMaterial({ color: 14708874 }));
+    base.scale.y = 0.5;
+    base.position.y = 0.05;
+    group.add(base);
+    [-0.14, 0.14].forEach((x) => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), dark);
+      e.position.set(x, 0.18, 0.4);
+      group.add(e);
+    });
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), dark);
+    mouth.position.set(0, 0.04, 0.43);
+    mouth.scale.set(0.9, 0.45, 0.5);
+    group.add(mouth);
+    group.position.y = 0.1;
+  } else {
+    const bellMat = new THREE.MeshStandardMaterial({ color: 13219583, transparent: true, opacity: 0.65, emissive: 9067775, emissiveIntensity: 0.3, roughness: 0.3, side: THREE.DoubleSide });
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), bellMat);
+    bell.position.y = 0.3;
+    group.add(bell);
+    for (let k = 0; k < 5; k++) {
+      const tg = new THREE.CylinderGeometry(0.018, 0.01, 0.9, 4);
+      tg.translate(0, -0.45, 0);
+      const tn = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ color: 14207231, transparent: true, opacity: 0.55 }));
+      const a = k / 5 * Math.PI * 2;
+      tn.position.set(Math.cos(a) * 0.3, 0.3, Math.sin(a) * 0.3);
+      group.add(tn);
+    }
+    [-0.15, 0.15].forEach((x) => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), dark);
+      e.position.set(x, 0.55, 0.5);
+      group.add(e);
+    });
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), dark);
+    mouth.position.set(0, 0.4, 0.56);
+    mouth.scale.set(0.9, 0.45, 0.5);
+    group.add(mouth);
+    group.position.y = 0.1;
+  }
+  return { group, mouth };
+}
+function ChatAvatar({ type, talkingRef }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const mount = ref.current;
+    if (!mount) return;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+    camera.position.set(0, 0.7, 3.1);
+    camera.lookAt(0, 0.45, 0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(110, 110);
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.setClearColor(0, 0);
+    mount.appendChild(renderer.domElement);
+    scene.add(new THREE.AmbientLight(16777215, 0.95));
+    const d = new THREE.DirectionalLight(16777215, 0.8);
+    d.position.set(2, 3, 4);
+    scene.add(d);
+    const { group, mouth } = buildAvatarModel(type);
+    scene.add(group);
+    const baseY = group.position.y;
+    let raf, t = 0, last = performance.now();
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1e3);
+      last = now;
+      t += dt;
+      group.position.y = baseY + Math.sin(t * 2) * 0.05;
+      group.rotation.y = (type === "fish" || type === "katsuo" ? -0.85 : 0) + Math.sin(t * 0.8) * 0.1;
+      const talking = talkingRef.current > Date.now();
+      if (mouth) mouth.scale.y = talking ? 0.35 + Math.abs(Math.sin(t * 13)) * 1.5 : 0.45;
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      mount.removeChild(renderer.domElement);
+      renderer.dispose();
+    };
+  }, [type, talkingRef]);
+  return /* @__PURE__ */ React.createElement("div", { ref, style: { width: 110, height: 110, flex: "0 0 auto" } });
+}
+function AquariumLife3D() {
+  const [loaded, setLoaded] = useState(false);
+  const [, setTick] = useState(0);
+  const [mode, setMode] = useState("hidamari");
+  const [welcome, setWelcome] = useState(null);
+  const [menuTab, setMenuTab] = useState("care");
+  const [feedCooldown, setFeedCooldown] = useState(false);
+  const [effects, setEffects] = useState([]);
+  const [observe, setObserve] = useState(null);
+  const [outfits, setOutfits] = useState({ ...defaultOutfits });
+  const [weather, setWeather] = useState(null);
+  const [aiStatus, setAiStatus] = useState("unknown");
+  const [rushBanner, setRushBanner] = useState(null);
+  const [rushResult, setRushResult] = useState(null);
+  const [showClock, setShowClock] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatTarget, setChatTarget] = useState("fish");
+  const [chats, setChats] = useState({ fish: [], katsuo: [], eel: [], crab: [], jelly: [], hermit: [], anemone: [] });
+  const [chatInput, setChatInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [fortuneOpen, setFortuneOpen] = useState(false);
+  const [fStep, setFStep] = useState("zodiac");
+  const [fQIndex, setFQIndex] = useState(0);
+  const [fAnswers, setFAnswers] = useState([]);
+  const [fCharge, setFCharge] = useState(50);
+  const [fResult, setFResult] = useState(null);
+  const [fFallback, setFFallback] = useState(false);
+  const mountRef = useRef(null);
+  const stats = useRef({ ...defaultStats });
+  const worldRef = useRef(null);
+  const modeRef = useRef("hidamari");
+  const observeRef = useRef(null);
+  const outfitsRef = useRef({ ...defaultOutfits });
+  const buddiesRef = useRef([]);
+  const effectId = useRef(0);
+  const chatBottomRef = useRef(null);
+  const talkingRef = useRef(0);
+  const rushTimers = useRef([]);
+  const rushGained = useRef(0);
+  const chargeRef = useRef(50);
+  const clockRef = useRef(true);
+  const save = useCallback(async () => {
+    const data = JSON.stringify({ ...stats.current, mode: modeRef.current, outfits: outfitsRef.current, buddies: buddiesRef.current, clock: clockRef.current, lastSeen: Date.now() });
+    await persist.set(STORAGE_KEY, data);
+  }, []);
+  useEffect(() => {
+    (async () => {
+      const raw = await persist.get(STORAGE_KEY);
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          const elapsed = Math.max(0, (Date.now() - (d.lastSeen || Date.now())) / 1e3);
+          stats.current = {
+            satiety: clamp((d.satiety ?? 80) - elapsed * SATIETY_DECAY, 0, 100),
+            quality: clamp((d.quality ?? 95) - elapsed * QUALITY_DECAY, 0, 100),
+            temp: d.heater ?? 25,
+            heater: d.heater ?? 25
+          };
+          if (d.mode && MODES[d.mode]) {
+            modeRef.current = d.mode;
+            setMode(d.mode);
+          }
+          if (d.outfits) {
+            outfitsRef.current = { ...defaultOutfits, ...d.outfits };
+            setOutfits(outfitsRef.current);
+          }
+          if (Array.isArray(d.buddies)) buddiesRef.current = d.buddies.slice(0, MAX_BUDDIES);
+          if (d.clock === false) {
+            clockRef.current = false;
+            setShowClock(false);
+          }
+          if (elapsed > 600) {
+            const hh = Math.floor(elapsed / 3600), mm = Math.floor(elapsed % 3600 / 60);
+            setWelcome((hh > 0 ? hh + "時間" : "") + mm + "分ぶり！みんな待ってたよ🐠");
+          }
+        } catch (e) {
+          stats.current = { ...defaultStats };
+        }
+      }
+      setLoaded(true);
+      save();
+    })();
+  }, [save]);
+  useEffect(() => {
+    if (!loaded) return;
+    const id = setInterval(save, 1e4);
+    const tickId = setInterval(() => setTick((v) => v + 1), 1e3);
+    const onHide = () => save();
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      clearInterval(id);
+      clearInterval(tickId);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [loaded, save]);
+  useEffect(() => {
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=35.44&longitude=139.64&current_weather=true").then((r) => r.json()).then((j) => {
+      const c = j && j.current_weather;
+      if (c) setWeather({ temp: c.temperature, code: c.weathercode });
+      else setWeather({ err: true });
+    }).catch(() => setWeather({ err: true }));
+  }, []);
+  useEffect(() => () => {
+    rushTimers.current.forEach(clearTimeout);
+  }, []);
+  const addEffect = useCallback((v3, text, world) => {
+    const v = v3.clone().project(world.camera);
+    if (v.z > 1) return;
+    const id = ++effectId.current;
+    setEffects((es) => [...es.slice(-8), { id, left: (v.x + 1) / 2 * 100, top: (1 - (v.y + 1) / 2) * 100, text }]);
+    setTimeout(() => setEffects((es) => es.filter((e) => e.id !== id)), 1400);
+  }, []);
+  useEffect(() => {
+    if (!loaded || !mountRef.current) return;
+    const mount = mountRef.current;
+    const W = {
+      pellets: [],
+      hitTargets: [],
+      all: [],
+      fishes: [],
+      katsuoArr: [],
+      eelsArr: [],
+      crabs: [],
+      jelliesArr: [],
+      hermits: [],
+      anemones: [],
+      outfitSlots: { fish: [], katsuo: [], eel: [], crab: [], jelly: [], hermit: [], anemone: [] },
+      counts: {},
+      sleepyUntil: 0
+    };
+    W.byKind = { fish: W.fishes, katsuo: W.katsuoArr, eel: W.eelsArr, crab: W.crabs, jelly: W.jelliesArr, hermit: W.hermits, anemone: W.anemones };
+    worldRef.current = W;
+    let instId = 0;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 16 / 10, 0.1, 100);
+    W.scene = scene;
+    W.camera = camera;
+    W.cam = { theta: 0, phi: 1.25, radius: 11.5, radiusGoal: 11.5, target: new THREE.Vector3(0, 2.4, 0), targetGoal: new THREE.Vector3(0, 2.4, 0) };
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    mount.appendChild(renderer.domElement);
+    renderer.domElement.style.display = "block";
+    renderer.domElement.style.borderRadius = "14px";
+    renderer.domElement.style.touchAction = "none";
+    renderer.domElement.style.cursor = "grab";
+    const resize = () => {
+      const w = mount.clientWidth, h = Math.round(w * 0.62);
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    const amb = new THREE.AmbientLight(16777215, 0.8);
+    const sun = new THREE.DirectionalLight(16777215, 1);
+    sun.position.set(5, 10, 6);
+    const neonA = new THREE.PointLight(58879, 0, 18);
+    neonA.position.set(-4, 5.5, 2);
+    const neonB = new THREE.PointLight(16727536, 0, 18);
+    neonB.position.set(4, 5, -1.5);
+    scene.add(amb, sun, neonA, neonB);
+    scene.fog = new THREE.Fog(6732e3, 12, 30);
+    W.lights = { amb, sun, neonA, neonB };
+    const neonMats = [];
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(12.4, 7.2), new THREE.MeshBasicMaterial({ color: 4168908 }));
+    backWall.position.set(0, 3.5, -3.05);
+    scene.add(backWall);
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(12.2, 7.1, 6.2)),
+      new THREE.LineBasicMaterial({ color: 12577023, transparent: true, opacity: 0.45 })
+    );
+    edges.position.y = 3.55;
+    scene.add(edges);
+    const sand = new THREE.Mesh(new THREE.PlaneGeometry(12.2, 6.2), new THREE.MeshStandardMaterial({ color: 15257500, roughness: 1 }));
+    sand.rotation.x = -Math.PI / 2;
+    scene.add(sand);
+    [[-2.5, -1.2, 1.6], [2.2, 0.8, 1.2], [4.5, 1.8, 1]].forEach(([x, z, r]) => {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), new THREE.MeshStandardMaterial({ color: 14599310, roughness: 1 }));
+      m.scale.y = 0.25;
+      m.position.set(x, 0.02, z);
+      scene.add(m);
+    });
+    const rockMat = new THREE.MeshStandardMaterial({ color: 7043717, roughness: 0.95 });
+    const rock1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1, 0), rockMat);
+    rock1.position.set(3.7, 0.8, -1.2);
+    const rock2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.7, 0), rockMat);
+    rock2.position.set(4.6, 0.5, -0.4);
+    scene.add(rock1, rock2);
+    const coral = new THREE.Group();
+    [16747100, 16753981, 16740241].forEach((col, i) => {
+      const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0, roughness: 0.7 });
+      neonMats.push(mat);
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.22 - i * 0.03, 1.4 + i * 0.4, 8), mat);
+      c.position.set((i - 1) * 0.42, (1.4 + i * 0.4) / 2, 0);
+      c.rotation.z = (i - 1) * 0.25;
+      coral.add(c);
+    });
+    coral.position.set(1.2, 0, -1.6);
+    scene.add(coral);
+    const attachOutfits = (parent, kind, pos, scale) => {
+      const set = {};
+      ["hat", "ribbon", "crown"].forEach((id) => {
+        const a = makeAccessory(id);
+        a.position.copy(pos);
+        a.scale.setScalar(scale);
+        a.visible = false;
+        parent.add(a);
+        set[id] = a;
+      });
+      W.outfitSlots[kind].push(set);
+      Object.entries(set).forEach(([k2, m2]) => {
+        m2.visible = k2 === outfitsRef.current[kind];
+      });
+    };
+    W.setOutfit = (kind, id) => {
+      W.outfitSlots[kind].forEach((set) => {
+        Object.entries(set).forEach(([k2, m2]) => {
+          m2.visible = k2 === id;
+        });
+      });
+    };
+    const baseInst = (kind, opts) => {
+      W.counts[kind] = (W.counts[kind] || 0) + 1;
+      const n = W.counts[kind];
+      const pool = NAMES[kind];
+      const name = pool[(n - 1) % pool.length] + (n > pool.length ? " " + n + "号" : "");
+      return {
+        id: ++instId,
+        kind,
+        name,
+        seed: opts && opts.seed != null ? opts.seed : Math.floor(Math.random() * 1e9),
+        hue: opts ? opts.hue : null,
+        temp: false,
+        expireAt: 0,
+        vortex: { a0: rand(0, 6.28), r: rand(1.4, 4.2), ph: rand(0, 6), spin: rand(4, 9) }
+      };
+    };
+    const registerHit = (mesh, inst) => {
+      mesh.userData = { kind: inst.kind, id: inst.id };
+      W.hitTargets.push(mesh);
+    };
+    W.removeInst = (inst) => {
+      scene.remove(inst.group);
+      if (inst.hole) scene.remove(inst.hole);
+      W.hitTargets = W.hitTargets.filter((h) => h.userData.id !== inst.id);
+      const arr = W.byKind[inst.kind];
+      const ix = arr.indexOf(inst);
+      if (ix >= 0) arr.splice(ix, 1);
+      const ai = W.all.indexOf(inst);
+      if (ai >= 0) W.all.splice(ai, 1);
+    };
+    W.requestExitObserve = () => {
+      observeRef.current = null;
+      W.cam.radiusGoal = 11.5;
+      setObserve(null);
+    };
+    const makeFish = (opts) => {
+      const inst = baseInst("fish", opts);
+      const g = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 16744234, roughness: 0.5 });
+      const tailMat = new THREE.MeshStandardMaterial({ color: 16751957 });
+      if (inst.hue != null) {
+        bodyMat.color.setHSL(inst.hue, 0.8, 0.55);
+        tailMat.color.setHSL(inst.hue, 0.8, 0.65);
+      }
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 24, 16), bodyMat);
+      body.scale.set(1.4, 0.9, 0.62);
+      g.add(body);
+      const stripeMat = new THREE.MeshStandardMaterial({ color: 16777215, roughness: 0.5 });
+      [[-0.32, 0.95], [0.05, 1], [0.42, 0.8]].forEach(([x, sc]) => {
+        const cyl = new THREE.CylinderGeometry(0.5, 0.5, 0.13, 20);
+        cyl.rotateZ(Math.PI / 2);
+        const rr = Math.sqrt(Math.max(0.05, 1 - (x / 0.7) ** 2)) * 0.52 * sc;
+        const st = new THREE.Mesh(cyl, stripeMat);
+        st.scale.set(1, (0.9 * rr + 0.03) * 2.04, (0.62 * rr + 0.03) * 2.04);
+        st.position.x = x;
+        g.add(st);
+      });
+      const tailGroup = new THREE.Group();
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.5, 4), tailMat);
+      tail.rotation.z = Math.PI / 2;
+      tail.scale.z = 0.3;
+      tail.position.x = -0.25;
+      tailGroup.add(tail);
+      tailGroup.position.x = -0.62;
+      g.add(tailGroup);
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 2236962 }));
+      eyeL.position.set(0.55, 0.08, 0.18);
+      const eyeR = eyeL.clone();
+      eyeR.position.z = -0.18;
+      g.add(eyeL, eyeR);
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 6), hitMat);
+      registerHit(hit, inst);
+      g.add(hit);
+      attachOutfits(g, "fish", new THREE.Vector3(0.12, 0.52, 0), 0.8);
+      g.position.set(rand(-4, 4), rand(1.5, 5), rand(-1.5, 1.5));
+      scene.add(g);
+      Object.assign(inst, { group: g, tailGroup, target: new THREE.Vector3(rand(-4, 4), rand(1, 5), 0), state: "swim", until: 0, heading: 0 });
+      W.fishes.push(inst);
+      W.all.push(inst);
+      return inst;
+    };
+    const makeKatsuo = (opts) => {
+      const inst = baseInst("katsuo", opts);
+      const g = new THREE.Group();
+      const topMat = new THREE.MeshStandardMaterial({ color: 2771594, roughness: 0.4, metalness: 0.3 });
+      const belMat = new THREE.MeshStandardMaterial({ color: 14214382, roughness: 0.35, metalness: 0.4 });
+      if (inst.hue != null) topMat.color.setHSL(inst.hue, 0.6, 0.42);
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 14), topMat);
+      body.scale.set(2.1, 0.75, 0.6);
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 14), belMat);
+      belly.scale.set(2, 0.64, 0.56);
+      belly.position.y = -0.09;
+      g.add(body, belly);
+      const stMat = new THREE.MeshStandardMaterial({ color: 4481162 });
+      for (let i = 0; i < 3; i++) {
+        const st = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.022, 0.6), stMat);
+        st.position.set(-0.08, -0.14 - i * 0.05, 0);
+        g.add(st);
+      }
+      const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 6), topMat);
+      dorsal.position.set(0.05, 0.36, 0);
+      g.add(dorsal);
+      const tailGroup = new THREE.Group();
+      const tMat = new THREE.MeshStandardMaterial({ color: 3362942 });
+      [1, -1].forEach((sd) => {
+        const fin = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.42, 6), tMat);
+        fin.position.set(-0.16, sd * 0.14, 0);
+        fin.rotation.z = sd * 2.3;
+        tailGroup.add(fin);
+      });
+      tailGroup.position.x = -0.92;
+      g.add(tailGroup);
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), new THREE.MeshBasicMaterial({ color: 1118481 }));
+      eyeL.position.set(0.72, 0.06, 0.16);
+      const eyeR = eyeL.clone();
+      eyeR.position.z = -0.16;
+      g.add(eyeL, eyeR);
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(1.05, 8, 6), hitMat);
+      registerHit(hit, inst);
+      g.add(hit);
+      attachOutfits(g, "katsuo", new THREE.Vector3(0.1, 0.46, 0), 0.8);
+      g.position.set(rand(-4, 4), rand(2.5, 5.5), rand(-1.5, 1.5));
+      scene.add(g);
+      Object.assign(inst, { group: g, tailGroup, target: new THREE.Vector3(rand(-4.5, 4.5), rand(2, 5.6), 0), state: "swim", until: 0, heading: 0, dashUntil: 0 });
+      W.katsuoArr.push(inst);
+      W.all.push(inst);
+      return inst;
+    };
+    const makeEel = (opts) => {
+      const inst = baseInst("eel", opts);
+      const home = opts && opts.home || { x: rand(-4, 4.3), z: rand(0.8, 2.3) };
+      const g = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 16118762, roughness: 0.6 });
+      if (inst.hue != null) bodyMat.color.setHSL(inst.hue, 0.25, 0.88);
+      const spotMat = new THREE.MeshStandardMaterial({ color: 3881787 });
+      const bodyGeo = new THREE.CylinderGeometry(0.1, 0.13, 2.2, 10);
+      bodyGeo.translate(0, 1.1, 0);
+      g.add(new THREE.Mesh(bodyGeo, bodyMat));
+      [[0.7, 0.1, 0.04], [1.3, -0.08, 0.06], [1.8, 0.06, -0.05]].forEach(([y, x, z]) => {
+        const sp = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), spotMat);
+        sp.position.set(x, y, z + 0.08);
+        g.add(sp);
+      });
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), bodyMat);
+      head.position.y = 2.2;
+      g.add(head);
+      [-0.05, 0.05].forEach((x) => {
+        const e = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), spotMat);
+        e.position.set(x, 2.26, 0.08);
+        g.add(e);
+      });
+      const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 2.6, 6), hitMat);
+      hit.position.y = 1.3;
+      registerHit(hit, inst);
+      g.add(hit);
+      attachOutfits(g, "eel", new THREE.Vector3(0, 2.34, 0), 0.6);
+      g.position.set(home.x, 0, home.z);
+      scene.add(g);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), new THREE.MeshBasicMaterial({ color: 10123845 }));
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.set(home.x, 0.015, home.z);
+      scene.add(hole);
+      Object.assign(inst, { group: g, hole, home, emerge: 1, targetE: 1, reemergeAt: 0, phase: rand(0, 6) });
+      W.eelsArr.push(inst);
+      W.all.push(inst);
+      return inst;
+    };
+    const makeCrabLike = (kind, opts) => {
+      const inst = baseInst(kind, opts);
+      const g = new THREE.Group();
+      const isHermit = kind === "hermit";
+      const mat = new THREE.MeshStandardMaterial({ color: isHermit ? 15238234 : 15158332, roughness: 0.6 });
+      if (inst.hue != null) mat.color.setHSL(inst.hue, 0.7, 0.5);
+      const soft = new THREE.Group();
+      const bodyR = isHermit ? 0.28 : 0.42;
+      const crabBody = new THREE.Mesh(new THREE.SphereGeometry(bodyR, 16, 12), mat);
+      crabBody.scale.set(1.25, 0.7, 1);
+      if (isHermit) crabBody.position.z = 0.18;
+      soft.add(crabBody);
+      [-0.14, 0.14].forEach((x) => {
+        const z0 = isHermit ? 0.28 : 0.1;
+        const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 6), mat);
+        stalk.position.set(x, 0.32, z0);
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), new THREE.MeshBasicMaterial({ color: 16777215 }));
+        eye.position.set(x, 0.46, z0);
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.033, 6, 6), new THREE.MeshBasicMaterial({ color: 2236962 }));
+        pupil.position.set(x, 0.46, z0 + 0.06);
+        soft.add(stalk, eye, pupil);
+      });
+      [-1, 1].forEach((sd) => {
+        const claw = new THREE.Mesh(new THREE.SphereGeometry(isHermit ? 0.12 : 0.18, 10, 8), mat);
+        claw.position.set(sd * (isHermit ? 0.4 : 0.58), 0.05, isHermit ? 0.3 : 0.15);
+        soft.add(claw);
+      });
+      const legs = [];
+      [-1, 1].forEach((sd) => {
+        for (let k = 0; k < 3; k++) {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.018, isHermit ? 0.35 : 0.5, 5), mat);
+          leg.position.set(sd * (isHermit ? 0.32 : 0.45), -0.05, -0.18 + k * 0.18);
+          leg.rotation.z = sd * -0.9;
+          leg.userData = { sd, k, baseZ: sd * -0.9 };
+          legs.push(leg);
+          soft.add(leg);
+        }
+      });
+      g.add(soft);
+      if (isHermit) {
+        const shellMat = new THREE.MeshStandardMaterial({ color: 10121034, roughness: 0.75 });
+        if (inst.hue != null) shellMat.color.setHSL(inst.hue, 0.45, 0.45);
+        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), shellMat);
+        shell.position.set(0, 0.18, -0.22);
+        const swirl = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.05, 8, 14), new THREE.MeshStandardMaterial({ color: 8016954 }));
+        swirl.position.set(0, 0.22, -0.22);
+        swirl.rotation.y = Math.PI / 5;
+        g.add(shell, swirl);
+      }
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(isHermit ? 0.72 : 0.85, 8, 6), hitMat);
+      registerHit(hit, inst);
+      g.add(hit);
+      attachOutfits(g, kind, new THREE.Vector3(0, isHermit ? 0.45 : 0.55, 0), isHermit ? 0.7 : 0.85);
+      const groundY = isHermit ? 0.28 : 0.32;
+      g.position.set(rand(-4, 4), groundY, rand(0.7, 2.2));
+      scene.add(g);
+      Object.assign(inst, { group: g, soft, legs, dir: Math.random() < 0.5 ? -1 : 1, state: "walk", until: 0, wig: 0, groundY, hiding: false, hideUntil: 0 });
+      W.byKind[kind].push(inst);
+      W.all.push(inst);
+      return inst;
+    };
+    const makeJelly = (opts) => {
+      const inst = baseInst("jelly", opts);
+      const g = new THREE.Group();
+      const bellMat = new THREE.MeshStandardMaterial({
+        color: 13219583,
+        transparent: true,
+        opacity: 0.55,
+        emissive: 9067775,
+        emissiveIntensity: 0.15,
+        roughness: 0.3,
+        side: THREE.DoubleSide
+      });
+      if (inst.hue != null) {
+        bellMat.color.setHSL(inst.hue, 0.6, 0.75);
+        bellMat.emissive.setHSL(inst.hue, 0.9, 0.5);
+      }
+      neonMats.push(bellMat);
+      const bell = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), bellMat);
+      g.add(bell);
+      const tents = [];
+      for (let k = 0; k < 6; k++) {
+        const tg = new THREE.CylinderGeometry(0.015, 8e-3, 1.1, 4);
+        tg.translate(0, -0.55, 0);
+        const tn = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ color: 14207231, transparent: true, opacity: 0.5 }));
+        const a = k / 6 * Math.PI * 2;
+        tn.position.set(Math.cos(a) * 0.3, 0.02, Math.sin(a) * 0.3);
+        tn.userData.ph = k;
+        tents.push(tn);
+        g.add(tn);
+      }
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), hitMat);
+      registerHit(hit, inst);
+      g.add(hit);
+      attachOutfits(g, "jelly", new THREE.Vector3(0, 0.52, 0), 0.95);
+      g.position.set(rand(-3.5, 3.5), rand(2.5, 5.5), rand(-2, 1));
+      scene.add(g);
+      Object.assign(inst, { group: g, bell, tents, ph: rand(0, 6), drift: new THREE.Vector3(rand(-0.1, 0.1), 0, rand(-0.08, 0.08)) });
+      W.jelliesArr.push(inst);
+      W.all.push(inst);
+      return inst;
+    };
+    const makeAnemone = (opts) => {
+      const inst = baseInst("anemone", opts);
+      const g = new THREE.Group();
+      const anemMat = new THREE.MeshStandardMaterial({ color: 16752304, emissive: 16736138, emissiveIntensity: 0, roughness: 0.6 });
+      neonMats.push(anemMat);
+      const tentacles = [];
+      for (let i = 0; i < 10; i++) {
+        const tg = new THREE.CylinderGeometry(0.05, 0.07, 1.15, 6);
+        tg.translate(0, 0.575, 0);
+        const tn = new THREE.Mesh(tg, anemMat);
+        const a = i / 10 * Math.PI * 2;
+        tn.position.set(Math.cos(a) * 0.28, 0.1, Math.sin(a) * 0.28);
+        tn.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5);
+        tn.userData = { bx: Math.sin(a) * 0.5, bz: -Math.cos(a) * 0.5, ph: i };
+        tentacles.push(tn);
+        g.add(tn);
+      }
+      const base = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), new THREE.MeshStandardMaterial({ color: 14708874 }));
+      base.scale.y = 0.4;
+      g.add(base);
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 6), hitMat);
+      hit.position.y = 0.6;
+      registerHit(hit, inst);
+      g.add(hit);
+      g.position.set(-3, 0.05, 0.2);
+      scene.add(g);
+      Object.assign(inst, { group: g, tentacles, squishUntil: 0 });
+      W.anemones.push(inst);
+      W.all.push(inst);
+      return inst;
+    };
+    makeFish({ seed: 11, hue: null });
+    makeKatsuo({ seed: 15, hue: null });
+    makeEel({ seed: 21, hue: null, home: { x: -0.6, z: 1.4 } });
+    makeEel({ seed: 22, hue: null, home: { x: 0.25, z: 1.9 } });
+    makeEel({ seed: 23, hue: null, home: { x: 1.1, z: 1.4 } });
+    makeCrabLike("crab", { seed: 31, hue: null });
+    makeJelly({ seed: 41, hue: null });
+    makeJelly({ seed: 42, hue: null });
+    makeAnemone({ seed: 51, hue: null });
+    makeCrabLike("hermit", { seed: 61, hue: null });
+    W.spawnBuddy = (kind, opts = {}) => {
+      if (W.all.length >= 26) return null;
+      const k = kind || ["fish", "katsuo", "crab", "jelly", "eel", "hermit"][Math.floor(Math.random() * 6)];
+      const o = { hue: opts.hue != null ? opts.hue : Math.random(), seed: opts.seed };
+      let inst;
+      if (k === "fish") inst = makeFish(o);
+      else if (k === "katsuo") inst = makeKatsuo(o);
+      else if (k === "crab") inst = makeCrabLike("crab", o);
+      else if (k === "jelly") inst = makeJelly(o);
+      else if (k === "eel") inst = makeEel(o);
+      else inst = makeCrabLike("hermit", o);
+      if (opts.temp) {
+        inst.temp = true;
+        inst.expireAt = Date.now() + 18e4;
+      }
+      return inst;
+    };
+    buddiesRef.current.forEach((b) => W.spawnBuddy(b.kind, { hue: b.hue, seed: b.seed }));
+    const bubbles = [];
+    const bubMat = new THREE.MeshBasicMaterial({ color: 15399167, transparent: true, opacity: 0.45 });
+    for (let i = 0; i < 10; i++) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(rand(0.03, 0.07), 6, 6), bubMat);
+      b.position.set(3.7 + rand(-0.2, 0.2), rand(1.5, 6.5), -1.2 + rand(-0.2, 0.2));
+      b.userData.seed = rand(0, 10);
+      scene.add(b);
+      bubbles.push(b);
+    }
+    const foodGeos = {
+      flake: new THREE.BoxGeometry(0.16, 0.02, 0.16),
+      shrimp: new THREE.SphereGeometry(0.09, 8, 6),
+      clam: new THREE.SphereGeometry(0.12, 10, 8),
+      plankton: new THREE.SphereGeometry(0.05, 6, 6),
+      gochiso: new THREE.BoxGeometry(0.18, 0.12, 0.18),
+      yabai: new THREE.SphereGeometry(0.11, 8, 6),
+      jiro: new THREE.CylinderGeometry(0.15, 0.15, 0.12, 10),
+      tanita: new THREE.BoxGeometry(0.16, 0.05, 0.16)
+    };
+    const foodMats = {
+      flake: new THREE.MeshStandardMaterial({ color: 16765514 }),
+      shrimp: new THREE.MeshStandardMaterial({ color: 16747168 }),
+      clam: new THREE.MeshStandardMaterial({ color: 13219994 }),
+      plankton: new THREE.MeshStandardMaterial({ color: 10545407, emissive: 6342911, emissiveIntensity: 0.8 }),
+      gochiso: new THREE.MeshStandardMaterial({ color: 16760906, emissive: 11167232, emissiveIntensity: 0.3 }),
+      yabai: new THREE.MeshStandardMaterial({ color: 9063120, emissive: 5570730, emissiveIntensity: 0.5 }),
+      jiro: new THREE.MeshStandardMaterial({ color: 14271098 }),
+      tanita: new THREE.MeshStandardMaterial({ color: 7261038 })
+    };
+    W.spawnFood = (foodId) => {
+      const food = FOODS.find((f) => f.id === foodId);
+      for (let i = 0; i < 6; i++) {
+        const m = new THREE.Mesh(foodGeos[foodId], foodMats[foodId]);
+        if (foodId === "shrimp") m.scale.set(1.8, 0.7, 0.7);
+        if (foodId === "clam") m.scale.set(1, 0.55, 0.9);
+        m.position.set(rand(-4.5, 4.5), rand(6, 6.6), rand(-1.8, 1.8));
+        m.rotation.set(rand(0, 3), rand(0, 3), rand(0, 3));
+        scene.add(m);
+        W.pellets.push({ mesh: m, food, landed: false, landedAt: 0, seed: rand(0, 10), born: performance.now() });
+      }
+    };
+    W.fw = { rockets: [], parts: [], nextLaunch: 0 };
+    const partGeo = new THREE.SphereGeometry(0.05, 6, 6);
+    const rocketGeo = new THREE.SphereGeometry(0.06, 6, 6);
+    const clearFireworks = () => {
+      W.fw.rockets.forEach((r) => {
+        scene.remove(r.mesh);
+        r.mesh.material.dispose();
+      });
+      W.fw.parts.forEach((p) => {
+        scene.remove(p.mesh);
+        p.mesh.material.dispose();
+      });
+      W.fw.rockets = [];
+      W.fw.parts = [];
+    };
+    W.applyMode = (key) => {
+      const M = MODES[key];
+      if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color(M.bg);
+      else scene.background.set(M.bg);
+      scene.fog.color.set(M.fog);
+      backWall.material.color.set(M.back);
+      amb.color.set(M.amb[0]);
+      amb.intensity = M.amb[1];
+      sun.color.set(M.sun[0]);
+      sun.intensity = M.sun[1];
+      neonA.color.set(58879);
+      neonB.color.set(16727536);
+      neonA.intensity = M.neonA;
+      neonB.intensity = M.neonB;
+      neonA.position.set(-4, 5.5, 2);
+      neonB.position.set(4, 5, -1.5);
+      neonMats.forEach((mt) => {
+        mt.emissiveIntensity = M.emissive ? mt.transparent ? 1.2 : 0.8 : mt.transparent ? 0.15 : 0;
+      });
+    };
+    W.applyMode(modeRef.current);
+    const pointers = /* @__PURE__ */ new Map();
+    let pinchDist = null;
+    let tapInfo = null;
+    const ray = new THREE.Raycaster();
+    const ptr = new THREE.Vector2();
+    const doTap = (clientX, clientY) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      ptr.x = (clientX - r.left) / r.width * 2 - 1;
+      ptr.y = -((clientY - r.top) / r.height) * 2 + 1;
+      ray.setFromCamera(ptr, camera);
+      const hits = ray.intersectObjects(W.hitTargets, false);
+      if (hits.length === 0) return;
+      const { kind, id } = hits[0].object.userData;
+      const inst = W.all.find((i) => i.id === id);
+      if (!inst) return;
+      if (kind === "eel" && inst.emerge > 0.3 && modeRef.current !== "storm") {
+        inst.targetE = 0;
+        inst.reemergeAt = Date.now() + rand(4e3, 11e3);
+        addEffect(new THREE.Vector3(inst.home.x, 2.6, inst.home.z), "びっ！", W);
+      }
+      if (kind === "hermit" && !inst.hiding) {
+        inst.hiding = true;
+        inst.hideUntil = performance.now() + rand(3e3, 8e3);
+        addEffect(inst.group.position.clone().add(new THREE.Vector3(0, 0.9, 0)), "しゅっ！", W);
+      }
+      if (kind === "anemone") {
+        inst.squishUntil = performance.now() + 1200;
+        addEffect(inst.group.position.clone().add(new THREE.Vector3(0, 1.6, 0)), "きゅっ", W);
+      }
+      observeRef.current = { kind, id };
+      W.cam.radiusGoal = kind === "eel" || kind === "anemone" ? 3.6 : 4.2;
+      setObserve({ kind, id });
+    };
+    const onDown = (e) => {
+      renderer.domElement.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) tapInfo = { t: performance.now(), moved: 0 };
+      else {
+        tapInfo = null;
+        if (pointers.size === 2) {
+          const pts = [...pointers.values()];
+          pinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        }
+      }
+    };
+    const onMove = (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      const prev = pointers.get(e.pointerId);
+      const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        W.cam.theta -= dx * 6e-3;
+        W.cam.phi = clamp(W.cam.phi - dy * 5e-3, 0.45, 1.5);
+        if (tapInfo) tapInfo.moved += Math.abs(dx) + Math.abs(dy);
+      } else if (pointers.size === 2) {
+        const pts = [...pointers.values()];
+        const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        if (pinchDist && d > 0) {
+          W.cam.radius = clamp(W.cam.radius * (pinchDist / d), 3, 20);
+          W.cam.radiusGoal = W.cam.radius;
+        }
+        pinchDist = d;
+      }
+    };
+    const onUp = (e) => {
+      pointers.delete(e.pointerId);
+      pinchDist = null;
+      if (tapInfo && tapInfo.moved < 8 && performance.now() - tapInfo.t < 500) doTap(e.clientX, e.clientY);
+      tapInfo = null;
+    };
+    const onWheel = (e) => {
+      e.preventDefault();
+      W.cam.radius = clamp(W.cam.radius * (1 + e.deltaY * 12e-4), 3, 20);
+      W.cam.radiusGoal = W.cam.radius;
+    };
+    renderer.domElement.addEventListener("pointerdown", onDown);
+    renderer.domElement.addEventListener("pointermove", onMove);
+    renderer.domElement.addEventListener("pointerup", onUp);
+    renderer.domElement.addEventListener("pointercancel", onUp);
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+    let raf, last = performance.now(), t = 0;
+    let flashTimes = [], nextFlash = 3, lastFeverText = 0;
+    const loop = (now) => {
+      const dt = Math.min(0.1, (now - last) / 1e3);
+      last = now;
+      t += dt;
+      const s2 = stats.current;
+      const nowMs = Date.now();
+      const mk = modeRef.current;
+      s2.satiety = clamp(s2.satiety - dt * SATIETY_DECAY, 0, 100);
+      let qd = QUALITY_DECAY;
+      if (s2.temp > 27.5) qd *= 3;
+      s2.quality = clamp(s2.quality - dt * qd, 0, 100);
+      s2.temp += (s2.heater - s2.temp) * dt * 0.05;
+      let tf = 1;
+      if (s2.temp < 24) tf = clamp(0.4 + (s2.temp - 20) / 4 * 0.6, 0.4, 1);
+      if (mk === "night") tf *= 0.75;
+      if (nowMs < W.sleepyUntil) tf *= 0.35;
+      for (const inst of [...W.all]) {
+        if (inst.expireAt && nowMs > inst.expireAt) {
+          addEffect(inst.group.position.clone(), "ばいばい…👋", W);
+          if (observeRef.current && observeRef.current.id === inst.id) W.requestExitObserve();
+          W.removeInst(inst);
+        }
+      }
+      if (mk !== "dance") W.danceOn = false;
+      if (t > (W.nextTh || 0) && W.all.length > 0) {
+        W.nextTh = t + rand(4.5, 8.5);
+        const ti = W.all[Math.floor(Math.random() * W.all.length)];
+        const tp = ti.group.position.clone().add(new THREE.Vector3(0, ti.kind === "eel" ? 2.6 : 1.2, 0));
+        addEffect(tp, "💭" + instThought(ti, s2, mk), W);
+      }
+      W.applyMode(mk);
+      let shakeX = 0;
+      if (mk === "storm") {
+        if (t > nextFlash) {
+          flashTimes = [t + 0.05, t + 0.22];
+          nextFlash = t + rand(3.5, 8);
+        }
+        if (flashTimes.some((f) => Math.abs(t - f) < 0.06)) {
+          scene.background.set(15265535);
+          W.lights.amb.intensity = 2.6;
+        }
+        shakeX = Math.sin(t * 11) * 0.18;
+      } else if (mk === "carnival") {
+        if (t > W.fw.nextLaunch) {
+          const rk = new THREE.Mesh(rocketGeo, new THREE.MeshBasicMaterial({ color: 16773824 }));
+          rk.position.set(rand(-3.5, 3.5), 1.2, rand(-2.4, -1));
+          scene.add(rk);
+          W.fw.rockets.push({ mesh: rk, vy: rand(2.6, 3.4), burstY: rand(4.2, 6.2) });
+          W.fw.nextLaunch = t + rand(1, 2.2);
+        }
+        for (const rk of W.fw.rockets) {
+          rk.mesh.position.y += rk.vy * dt;
+          if (rk.mesh.position.y >= rk.burstY) {
+            rk.dead = true;
+            scene.remove(rk.mesh);
+            rk.mesh.material.dispose();
+            const hue = Math.random();
+            for (let i = 0; i < 24; i++) {
+              const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 1 });
+              mat.color.setHSL(hue, 1, 0.62);
+              const pm = new THREE.Mesh(partGeo, mat);
+              pm.position.copy(rk.mesh.position);
+              const dir = new THREE.Vector3(rand(-1, 1), rand(-1, 1), rand(-1, 1)).normalize().multiplyScalar(rand(1.2, 2.6));
+              scene.add(pm);
+              W.fw.parts.push({ mesh: pm, vel: dir, life: 1.2 });
+            }
+            W.lights.amb.intensity = 1.4;
+          }
+        }
+        W.fw.rockets = W.fw.rockets.filter((r) => !r.dead);
+        for (const p of W.fw.parts) {
+          p.life -= dt;
+          p.vel.y -= 1.5 * dt;
+          p.mesh.position.addScaledVector(p.vel, dt);
+          p.mesh.material.opacity = Math.max(0, p.life / 1.2);
+          if (p.life <= 0) {
+            p.dead = true;
+            scene.remove(p.mesh);
+            p.mesh.material.dispose();
+          }
+        }
+        W.fw.parts = W.fw.parts.filter((p) => !p.dead);
+      } else if (mk === "dance") {
+        const bb = Math.abs(Math.sin(t * 2.1333 * Math.PI));
+        const hh = Math.floor(t * 2.1333) % 6 / 6;
+        W.lights.neonA.color.setHSL(hh, 1, 0.6);
+        W.lights.neonB.color.setHSL((hh + 0.5) % 1, 1, 0.6);
+        W.lights.neonA.intensity = 1.2 + bb * 2.2;
+        W.lights.neonB.intensity = 1.2 + (1 - bb) * 2.2;
+        W.lights.amb.intensity = 0.45 + bb * 0.45;
+        W.lights.neonA.position.x = Math.sin(t * 4) * 4.5;
+        W.lights.neonB.position.x = -Math.sin(t * 4) * 4.5;
+        if (now - lastFeverText > 3e3) {
+          lastFeverText = now;
+          addEffect(new THREE.Vector3(rand(-2.5, 2.5), rand(3.5, 5.5), 0), "🪩✨", W);
+        }
+      } else if (mk === "fever") {
+        const h = t * 0.55 % 1;
+        scene.background.setHSL(h, 0.85, 0.5);
+        scene.fog.color.setHSL(h, 0.85, 0.5);
+        backWall.material.color.setHSL((h + 0.08) % 1, 0.85, 0.42);
+        W.lights.neonA.color.setHSL((h + 0.33) % 1, 1, 0.6);
+        W.lights.neonB.color.setHSL((h + 0.66) % 1, 1, 0.6);
+        W.lights.neonA.intensity = 1.8 + Math.sin(t * 18) * 1.3;
+        W.lights.neonB.intensity = 1.8 + Math.sin(t * 18 + 2) * 1.3;
+        W.lights.amb.intensity = 0.7 + Math.abs(Math.sin(t * 9)) * 0.5;
+        W.lights.neonA.position.x = Math.sin(t * 3) * 4.5;
+        W.lights.neonB.position.x = Math.cos(t * 3) * 4.5;
+        if (now - lastFeverText > 2600) {
+          lastFeverText = now;
+          addEffect(new THREE.Vector3(rand(-2, 2), rand(3.5, 5.5), 0), "大当たり!!🌈", W);
+        }
+      }
+      if (mk !== "carnival" && (W.fw.rockets.length || W.fw.parts.length)) clearFireworks();
+      for (const p of W.pellets) {
+        if (!p.landed) {
+          p.mesh.position.y -= p.food.sink * dt;
+          p.mesh.position.x += Math.sin(t * 2 + p.seed) * 0.15 * dt;
+          if (mk === "storm") {
+            const a2 = t * 2.6 + p.seed;
+            p.mesh.position.x += Math.cos(a2) * 2.2 * dt;
+            p.mesh.position.z += Math.sin(a2) * 1 * dt;
+            p.mesh.position.x = clamp(p.mesh.position.x, -5.5, 5.5);
+            p.mesh.position.z = clamp(p.mesh.position.z, -2.6, 2.6);
+          }
+          p.mesh.rotation.x += dt;
+          p.mesh.rotation.z += dt * 0.6;
+          if (p.mesh.position.y <= 0.12) {
+            p.mesh.position.y = 0.12;
+            p.landed = true;
+            p.landedAt = nowMs;
+          } else if (now - p.born > 4e4) {
+            p.dead = true;
+            s2.quality = clamp(s2.quality - 2, 0, 100);
+          }
+        } else if (nowMs - p.landedAt > 25e3) {
+          p.dead = true;
+          s2.quality = clamp(s2.quality - 3, 0, 100);
+          addEffect(p.mesh.position, "水がにごった…", W);
+        }
+      }
+      const eat = (p, word, pos, who) => {
+        p.dead = true;
+        const fav = p.food.fav === who || p.food.fav === "fish" && who === "katsuo" || p.food.fav === "crab" && (who === "crab" || who === "hermit") || p.food.fav === "eeljelly" && (who === "eel" || who === "jelly" || who === "anemone");
+        s2.satiety = clamp(s2.satiety + p.food.sat + (fav ? 3 : 0), 0, 100);
+        if (p.food.qual) s2.quality = clamp(s2.quality + p.food.qual, 0, 100);
+        if (p.food.sleepy) {
+          W.sleepyUntil = nowMs + 2e4;
+          addEffect(pos.clone().add(new THREE.Vector3(0, 0.6, 0)), "うごけない…🍜", W);
+        }
+        addEffect(pos, fav ? "大好物〜！💕" : word, W);
+      };
+      if (mk === "storm") {
+        for (const inst of W.all) {
+          if (inst.kind === "anemone") {
+            inst.group.rotation.z = Math.sin(t * 25 + inst.vortex.ph) * 0.06;
+            inst.tentacles.forEach((tn) => {
+              tn.rotation.x = tn.userData.bx + Math.sin(t * 14 + tn.userData.ph) * 0.5;
+              tn.rotation.z = tn.userData.bz + Math.cos(t * 12 + tn.userData.ph) * 0.5;
+            });
+            continue;
+          }
+          const a = t * 2.7 + inst.vortex.a0;
+          inst.group.position.set(
+            Math.cos(a) * inst.vortex.r,
+            3.1 + Math.sin(a * 1.3 + inst.vortex.ph) * 1.7,
+            Math.sin(a) * inst.vortex.r * 0.42
+          );
+          inst.group.rotation.x += dt * inst.vortex.spin;
+          inst.group.rotation.z += dt * inst.vortex.spin * 0.7;
+          if (inst.kind === "eel") inst.emerge = 1;
+        }
+      } else if (mk === "dance") {
+        if (!W.danceOn) {
+          W.danceOn = true;
+          W.all.forEach((i) => {
+            i.danceY = i.kind === "crab" || i.kind === "hermit" ? i.groundY : clamp(i.group.position.y, 1.4, 5.2);
+          });
+        }
+        const bp = t * 2.1333 * Math.PI;
+        const bounce = Math.abs(Math.sin(bp));
+        for (const inst of W.all) {
+          const g = inst.group;
+          if (inst.kind === "anemone") {
+            g.scale.y += (0.8 + bounce * 0.35 - g.scale.y) * Math.min(1, dt * 10);
+            inst.tentacles.forEach((tn) => {
+              tn.rotation.x = tn.userData.bx + Math.sin(bp * 2 + tn.userData.ph) * 0.6;
+              tn.rotation.z = tn.userData.bz + Math.cos(bp * 2 + tn.userData.ph) * 0.6;
+            });
+            continue;
+          }
+          if (inst.kind === "eel") {
+            inst.emerge = 1;
+            inst.targetE = 1;
+            g.position.y = 0;
+            g.rotation.z = Math.sin(bp + inst.phase) * 0.55;
+            g.rotation.x = Math.sin(bp * 0.5 + inst.phase) * 0.25;
+            continue;
+          }
+          if (inst.kind === "crab" || inst.kind === "hermit") {
+            g.position.y = inst.groundY + bounce * 0.7;
+            g.rotation.y += dt * 7;
+            inst.wig += dt * 22;
+            inst.legs.forEach((leg) => {
+              const u = leg.userData;
+              leg.rotation.z = u.baseZ + Math.sin(inst.wig + u.k) * 0.5 * u.sd;
+            });
+            if (inst.kind === "hermit") {
+              inst.hiding = false;
+              inst.soft.scale.set(1, 1, 1);
+            }
+            continue;
+          }
+          if (inst.kind === "jelly") {
+            inst.ph += dt * 9;
+            const pulse = Math.max(0, Math.sin(inst.ph));
+            inst.bell.scale.set(1 + pulse * 0.25, 1 - pulse * 0.3, 1 + pulse * 0.25);
+            g.position.y = inst.danceY + bounce * 0.6;
+            g.rotation.y += dt * 6;
+            continue;
+          }
+          g.position.y = inst.danceY + bounce * (inst.kind === "katsuo" ? 1.1 : 0.8);
+          g.rotation.y += dt * (inst.kind === "katsuo" ? 12 : 9);
+          g.rotation.z = Math.sin(bp * 2 + inst.id) * 0.5;
+          if (inst.tailGroup) inst.tailGroup.rotation.y = Math.sin(t * 20) * 0.7;
+        }
+      } else {
+        const floating = W.pellets.filter((p) => !p.dead && !p.landed);
+        for (const F of [...W.fishes, ...W.katsuoArr]) {
+          F.group.rotation.x *= Math.max(0, 1 - dt * 5);
+          let fSpeed = (F.kind === "katsuo" ? 2 : 1.1) * tf;
+          if (F.kind === "katsuo") {
+            if (now < (F.dashUntil || 0)) fSpeed *= 2.6;
+            else if (Math.random() < dt * 0.2) F.dashUntil = now + rand(500, 900);
+          }
+          if (floating.length > 0) {
+            let near = floating[0], nd = Infinity;
+            for (const p of floating) {
+              const d = p.mesh.position.distanceToSquared(F.group.position);
+              if (d < nd) {
+                nd = d;
+                near = p;
+              }
+            }
+            F.target.copy(near.mesh.position);
+            F.state = "swim";
+            fSpeed *= 1.8;
+          } else if (F.state === "rest") {
+            if (now > F.until) {
+              F.state = "swim";
+              F.target.set(rand(-4.8, 4.8), rand(0.8, 5.6), rand(-2, 2));
+            }
+            F.group.position.y += Math.sin(t * 2) * 3e-3;
+          }
+          if (F.state === "swim") {
+            const d = F.target.clone().sub(F.group.position);
+            const dist = d.length();
+            if (dist < 0.25) {
+              if (F.kind === "fish" && Math.random() < 0.15 && W.anemones[0]) {
+                F.state = "rest";
+                F.until = now + rand(3500, 8e3);
+                const ap = W.anemones[0].group.position;
+                F.group.position.set(ap.x + rand(-0.4, 0.4), 1.5 + rand(-0.2, 0.2), ap.z);
+              } else F.target.set(rand(-4.8, 4.8), rand(0.8, 5.6), rand(-2, 2));
+            } else {
+              d.normalize();
+              F.group.position.addScaledVector(d, fSpeed * dt);
+              const th = Math.atan2(-d.z, d.x);
+              let dh = th - F.heading;
+              while (dh > Math.PI) dh -= Math.PI * 2;
+              while (dh < -Math.PI) dh += Math.PI * 2;
+              F.heading += dh * Math.min(1, dt * 5);
+              F.group.rotation.y = F.heading;
+              F.group.rotation.z = clamp(d.y * 0.5, -0.4, 0.4);
+            }
+            for (const p of floating) {
+              if (!p.dead && p.mesh.position.distanceTo(F.group.position) < 0.55) eat(p, "ぱくっ", F.group.position, F.kind);
+            }
+          }
+          F.tailGroup.rotation.y = Math.sin(t * (F.kind === "katsuo" ? 16 : 9) + F.id) * 0.5;
+        }
+        for (const e of W.eelsArr) {
+          e.group.position.x += (e.home.x - e.group.position.x) * Math.min(1, dt * 3);
+          e.group.position.z += (e.home.z - e.group.position.z) * Math.min(1, dt * 3);
+          const rate = e.targetE < e.emerge ? 9 : 1.4;
+          e.emerge += (e.targetE - e.emerge) * Math.min(1, dt * rate);
+          if (e.targetE === 0 && nowMs > e.reemergeAt) e.targetE = 1;
+          e.group.position.y = (e.emerge - 1) * 2.3;
+          e.group.rotation.z = Math.sin(t * 1.6 + e.phase) * 0.12 * e.emerge;
+          e.group.rotation.x = Math.sin(t * 1.1 + e.phase) * 0.06 * e.emerge;
+          if (e.emerge > 0.7) {
+            for (const p of W.pellets) {
+              if (p.dead) continue;
+              const pp = p.mesh.position;
+              if (Math.hypot(pp.x - e.home.x, pp.z - e.home.z) < 0.55 && pp.y < 2.4) {
+                eat(p, "もぐもぐ", new THREE.Vector3(e.home.x, 2.4, e.home.z), "eel");
+              }
+            }
+          }
+        }
+        const landed = W.pellets.filter((p) => !p.dead && p.landed);
+        const walkers = [...W.crabs, ...W.hermits];
+        for (const C of walkers) {
+          const isHermit = C.kind === "hermit";
+          C.group.rotation.x *= Math.max(0, 1 - dt * 5);
+          C.group.rotation.z *= Math.max(0, 1 - dt * 5);
+          C.group.rotation.y *= Math.max(0, 1 - dt * 5);
+          C.group.position.y += (C.groundY - C.group.position.y) * Math.min(1, dt * 4);
+          if (isHermit) {
+            const target = C.hiding ? 0.06 : 1;
+            C.soft.scale.x += (target - C.soft.scale.x) * Math.min(1, dt * 8);
+            C.soft.scale.y = C.soft.scale.x;
+            C.soft.scale.z = C.soft.scale.x;
+            if (C.hiding && now > C.hideUntil) C.hiding = false;
+            if (C.hiding) continue;
+          }
+          if (landed.length > 0) {
+            let near = landed[0], nd = Infinity;
+            for (const p of landed) {
+              const d = Math.abs(p.mesh.position.x - C.group.position.x);
+              if (d < nd) {
+                nd = d;
+                near = p;
+              }
+            }
+            C.dir = near.mesh.position.x > C.group.position.x ? 1 : -1;
+            C.group.position.x += C.dir * (isHermit ? 0.55 : 0.75) * tf * dt;
+            C.group.position.z += (clamp(near.mesh.position.z, 0.7, 2.3) - C.group.position.z) * dt * 1.5;
+            C.wig += dt * 14;
+            if (near.mesh.position.distanceTo(C.group.position) < 0.55) eat(near, "カサカサ…ぱく", C.group.position, C.kind);
+          } else if (C.state === "dig") {
+            C.wig += dt * 18;
+            C.group.position.y = C.groundY + Math.sin(t * 12) * 0.04;
+            if (now > C.until) C.state = "walk";
+          } else {
+            C.group.position.x += C.dir * (isHermit ? 0.3 : 0.45) * tf * dt;
+            C.wig += dt * 10;
+            if (C.group.position.x < -4.5) C.dir = 1;
+            if (C.group.position.x > 4.5) C.dir = -1;
+            if (!isHermit && Math.random() < dt * 0.08) {
+              C.state = "dig";
+              C.until = now + rand(2e3, 3500);
+            }
+            if (Math.random() < dt * 0.05) C.dir *= -1;
+          }
+          C.legs.forEach((leg) => {
+            const u = leg.userData;
+            leg.rotation.z = u.baseZ + Math.sin(C.wig + u.k * 1.3) * 0.25 * u.sd;
+          });
+        }
+        for (const J of W.jelliesArr) {
+          J.group.rotation.x *= Math.max(0, 1 - dt * 4);
+          J.group.rotation.y *= Math.max(0, 1 - dt * 4);
+          J.ph += dt * 1.6;
+          const pulse = Math.max(0, Math.sin(J.ph));
+          J.bell.scale.set(1 + pulse * 0.12, 1 - pulse * 0.18, 1 + pulse * 0.12);
+          J.group.position.y += (pulse * 0.5 - 0.13) * dt * tf;
+          J.group.position.x += J.drift.x * dt;
+          J.group.position.z += J.drift.z * dt;
+          J.group.rotation.z = Math.sin(J.ph * 0.4) * 0.12;
+          J.tents.forEach((tn) => {
+            tn.rotation.x = Math.sin(t * 2 + tn.userData.ph) * 0.18;
+          });
+          J.group.position.y = clamp(J.group.position.y, 1.5, 6.2);
+          if (Math.abs(J.group.position.x) > 5) J.drift.x *= -1;
+          if (J.group.position.z > 2 || J.group.position.z < -2.4) J.drift.z *= -1;
+          if (Math.random() < dt * 0.05) J.drift.set(rand(-0.12, 0.12), 0, rand(-0.1, 0.1));
+          for (const p of W.pellets) {
+            if (!p.dead && p.food.id === "plankton" && p.mesh.position.distanceTo(J.group.position) < 0.8) {
+              eat(p, "ふよ…", J.group.position, "jelly");
+            }
+          }
+        }
+        for (const A of W.anemones) {
+          const squish = performance.now() < A.squishUntil ? 0.72 : 1;
+          A.group.scale.y += (squish - A.group.scale.y) * Math.min(1, dt * 8);
+          A.group.rotation.z = 0;
+          const sway = Math.sin(t * 1.2);
+          A.tentacles.forEach((tn) => {
+            tn.rotation.x = tn.userData.bx + Math.sin(t * 1.4 + tn.userData.ph) * 0.12 + sway * 0.05;
+            tn.rotation.z = tn.userData.bz + Math.cos(t * 1.1 + tn.userData.ph) * 0.12;
+          });
+          for (const p of W.pellets) {
+            if (!p.dead && p.food.id === "plankton") {
+              const pp = p.mesh.position;
+              if (Math.hypot(pp.x - A.group.position.x, pp.z - A.group.position.z) < 1 && pp.y < 1.6) {
+                eat(p, "もしゃ…", A.group.position.clone().add(new THREE.Vector3(0, 1.4, 0)), "anemone");
+              }
+            }
+          }
+        }
+      }
+      for (const b of bubbles) {
+        b.position.y += 0.9 * dt;
+        b.position.x += Math.sin(t * 2 + b.userData.seed) * 0.2 * dt;
+        if (b.position.y > 6.6) b.position.set(3.7 + rand(-0.2, 0.2), 1.4, -1.2 + rand(-0.2, 0.2));
+      }
+      W.pellets = W.pellets.filter((p) => {
+        if (p.dead) {
+          scene.remove(p.mesh);
+          return false;
+        }
+        return true;
+      });
+      const cm = W.cam;
+      const ob = observeRef.current;
+      if (ob) {
+        const inst = W.all.find((i) => i.id === ob.id);
+        if (!inst) W.requestExitObserve();
+        else {
+          const p = inst.group.position.clone();
+          if (ob.kind === "eel" && mk !== "storm") p.set(inst.home.x, 0.9 + inst.emerge * 1, inst.home.z);
+          if (ob.kind === "crab" || ob.kind === "hermit") p.y += 0.3;
+          if (ob.kind === "anemone") p.y += 0.8;
+          cm.targetGoal.copy(p);
+        }
+      } else {
+        cm.targetGoal.set(0, 2.4, 0);
+      }
+      cm.target.lerp(cm.targetGoal, Math.min(1, dt * 3));
+      cm.radius += (cm.radiusGoal - cm.radius) * Math.min(1, dt * 3);
+      const sp = Math.sin(cm.phi);
+      camera.position.set(
+        cm.target.x + cm.radius * sp * Math.sin(cm.theta) + shakeX,
+        cm.target.y + cm.radius * Math.cos(cm.phi),
+        cm.target.z + cm.radius * sp * Math.cos(cm.theta)
+      );
+      camera.lookAt(cm.target);
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      renderer.domElement.removeEventListener("pointerdown", onDown);
+      renderer.domElement.removeEventListener("pointermove", onMove);
+      renderer.domElement.removeEventListener("pointerup", onUp);
+      renderer.domElement.removeEventListener("pointercancel", onUp);
+      renderer.domElement.removeEventListener("wheel", onWheel);
+      mount.removeChild(renderer.domElement);
+      renderer.dispose();
+    };
+  }, [loaded, addEffect]);
+  const effectCenter = (txt) => {
+    if (worldRef.current) addEffect(new THREE.Vector3(0, 4.6, 0), txt, worldRef.current);
+  };
+  const feed = (foodId) => {
+    if (feedCooldown || !worldRef.current) return;
+    worldRef.current.spawnFood(foodId);
+    setFeedCooldown(true);
+    setTimeout(() => setFeedCooldown(false), 2500);
+    save();
+  };
+  const clean = () => {
+    stats.current.quality = 100;
+    effectCenter("水換え完了✨");
+    save();
+  };
+  const toggleClock = () => {
+    clockRef.current = !clockRef.current;
+    setShowClock(clockRef.current);
+    save();
+  };
+  const exitObserve = () => {
+    observeRef.current = null;
+    setObserve(null);
+    if (worldRef.current) worldRef.current.cam.radiusGoal = 11.5;
+  };
+  const changeOutfit = (kind, id) => {
+    outfitsRef.current = { ...outfitsRef.current, [kind]: id };
+    setOutfits(outfitsRef.current);
+    if (worldRef.current) worldRef.current.setOutfit(kind, id);
+    save();
+  };
+  const addBuddy = () => {
+    const W = worldRef.current;
+    if (!W) return;
+    if (buddiesRef.current.length >= MAX_BUDDIES) {
+      effectCenter("これ以上は満員です…🐟💦");
+      return;
+    }
+    const kinds = ["fish", "katsuo", "crab", "jelly", "eel", "hermit"];
+    const kind = kinds[Math.floor(Math.random() * kinds.length)];
+    const hue = Math.random();
+    const seed = Math.floor(Math.random() * 1e9);
+    const inst = W.spawnBuddy(kind, { hue, seed });
+    if (inst) {
+      buddiesRef.current = [...buddiesRef.current, { kind, hue, seed }];
+      effectCenter("なかまが増えた！🐣 " + PERSONAS[kind].emoji);
+      save();
+      setTick((v) => v + 1);
+    }
+  };
+  const clearRush = () => {
+    rushTimers.current.forEach(clearTimeout);
+    rushTimers.current = [];
+  };
+  const later = (ms, fn) => {
+    rushTimers.current.push(setTimeout(fn, ms));
+  };
+  const rushRound = () => {
+    const W = worldRef.current;
+    if (!W || modeRef.current !== "fever") {
+      setRushBanner(null);
+      return;
+    }
+    const n = 1 + (Math.random() < 0.5 ? 1 : 0);
+    for (let i = 0; i < n; i++) W.spawnBuddy(null, { temp: true });
+    rushGained.current += n;
+    setRushBanner("🌈 RUSH中✨ なかま +" + rushGained.current);
+    later(3800, () => {
+      if (Math.random() < 0.75) rushRound();
+      else {
+        setRushBanner(null);
+        setRushResult(rushGained.current);
+      }
+    });
+  };
+  const changeMode = (m) => {
+    const prev = modeRef.current;
+    modeRef.current = m;
+    setMode(m);
+    if (worldRef.current) worldRef.current.applyMode(m);
+    clearRush();
+    if (m === "fever" && prev !== "fever") {
+      setRushBanner("🎰 抽選中…");
+      later(2e3, () => {
+        if (Math.random() < 0.5) {
+          setRushBanner("🫧 ざんねん、単発…");
+          later(2200, () => setRushBanner(null));
+        } else {
+          rushGained.current = 0;
+          setRushBanner("🌈 RUSH突入!!");
+          later(1200, rushRound);
+        }
+      });
+    } else if (m !== "fever") setRushBanner(null);
+    save();
+  };
+  const sendChat = async () => {
+    const text = chatInput.trim();
+    if (!text || sending) return;
+    const target = chatTarget;
+    const history = chats[target];
+    setChats((c) => ({ ...c, [target]: [...c[target], { role: "user", content: text }] }));
+    setChatInput("");
+    setSending(true);
+    const s2 = stats.current;
+    const p = PERSONAS[target];
+    const sys = p.prompt + "\nいまの水槽の状態: 満腹度" + Math.round(s2.satiety) + "%、水質" + Math.round(s2.quality) + "%、水温" + s2.temp.toFixed(1) + "℃、照明は「" + MODES[mode].label + "」。\nこのキャラクターになりきって、日本語で1〜3文の短い返事をして。絵文字は少しだけ。設定の説明やAIであることへの言及は禁止。状態（お腹の空き具合など）を会話に自然に反映して。";
+    try {
+      const msgs = [
+        { role: "user", content: sys },
+        { role: "assistant", content: "わかった、なりきって返事するね。" },
+        ...history.map((m) => ({ role: m.role, content: m.content })),
+        { role: "user", content: text }
+      ];
+      const reply = (await callClaude(msgs)).trim() || p.fallback[0];
+      setAiStatus("ok");
+      talkingRef.current = Date.now() + clamp(reply.length * 90, 1500, 7e3);
+      setChats((c) => ({ ...c, [target]: [...c[target], { role: "assistant", content: reply }] }));
+    } catch (e) {
+      setAiStatus("ng");
+      const fb = p.fallback[Math.floor(Math.random() * p.fallback.length)];
+      talkingRef.current = Date.now() + 2500;
+      setChats((c) => ({ ...c, [target]: [...c[target], { role: "assistant", content: fb }] }));
+    }
+    setSending(false);
+    setTimeout(() => {
+      if (chatBottomRef.current) chatBottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+  };
+  const openFortune = () => {
+    setFortuneOpen(true);
+    setFStep("zodiac");
+    setFQIndex(0);
+    setFAnswers([]);
+    setFResult(null);
+    setFFallback(false);
+    setFCharge(50);
+    chargeRef.current = 50;
+  };
+  const answerFortune = async (opt) => {
+    const newAnswers = [...fAnswers, opt.t];
+    setFAnswers(newAnswers);
+    const newCharge = clamp(chargeRef.current + opt.d, 5, 99);
+    chargeRef.current = newCharge;
+    setFCharge(newCharge);
+    if (fQIndex < FQ.length - 1) {
+      setFQIndex(fQIndex + 1);
+      return;
+    }
+    setFStep("loading");
+    const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+    const prompt = "あなたは海水水槽に住むチンアナゴの占い師「にょろ先生」。おとめ座専門の占い師として、今日(" + today + ")のおとめ座の運勢を細かく分析して。\n相談者への質問と回答:\n1. " + FQ[0].q + " → " + newAnswers[0] + "\n2. " + FQ[1].q + " → " + newAnswers[1] + "\n3. " + FQ[2].q + " → " + newAnswers[2] + "\n運勢チャージは" + newCharge + "%（この数値が高いほど全体的に強気で良い結果に、低いほど慎重で控えめな結果にすること）。\n回答内容を分析に必ず反映し、特に「" + newAnswers[1] + '」の運勢は他より詳しく。\n以下のJSONのみを出力(マークダウンのコードブロック記号や前置きは一切禁止):\n{"sogo":{"stars":1-5の整数,"text":"総合運2文"},"love":{"stars":整数,"text":"恋愛運2文"},"work":{"stars":整数,"text":"仕事運2文"},"money":{"stars":整数,"text":"金運2文"},"power":{"value":1〜999999の整数(今日の戦闘力。チャージが高いほど大きく),"text":"戦闘力への一言"},"station":"今日行くといい日本の実在の駅名と理由1文","pachinko":"架空のパロディパチンコ台名(海やアクアリウムにちなんだもの。実在の機種名は絶対に使わない)とおすすめ理由1文","snack":"今日食べるといいお菓子と理由1文","lucky_item":"ラッキーアイテム","lucky_color":"ラッキーカラー","hitokoto":"にょろ先生の控えめで優しい一言(語尾に…を使うビビリ口調)"}';
+    try {
+      const raw = await callClaude([{ role: "user", content: prompt }]);
+      const cleanRaw = raw.replace(/```json|```/g, "").trim();
+      setFResult(JSON.parse(cleanRaw));
+      setAiStatus("ok");
+    } catch (e) {
+      setFResult(localFortune(newAnswers, newCharge));
+      setFFallback(true);
+      setAiStatus("ng");
+    }
+    setFStep("result");
+  };
+  const s = stats.current;
+  const tempLabel = s.temp < 23.5 ? "寒そう…🥶" : s.temp > 27.5 ? "暑すぎ…🥵" : "ちょうどいい♨️";
+  const satietyLabel = s.satiety < 25 ? "おなかぺこぺこ😣" : s.satiety < 60 ? "ちょっと空腹" : "まんぷく😊";
+  const qualityLabel = s.quality < 35 ? "にごってる…水換えして！" : s.quality < 70 ? "少しにごり気味" : "ピカピカ✨";
+  const obInst = observe && worldRef.current ? worldRef.current.all.find((i) => i.id === observe.id) : null;
+  const obMood = obInst ? creatureMood(obInst.kind, obInst.seed, s) : null;
+  const obProf = obInst ? instProfile(obInst.kind, obInst.seed) : null;
+  const chatMood = creatureMood(chatTarget, 0, s);
+  const buddyCount = buddiesRef.current.length;
+  if (!loaded) {
+    return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, textAlign: "center", padding: 40 } }, "水槽の準備中…🫧"));
+  }
+  return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("style", null, `
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap');
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        .aq-btn { transition: transform .1s ease, opacity .2s; }
+        .aq-btn:active { transform: scale(.94); }
+        @keyframes floatUp { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -36px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes rushPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
+      `), /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…")), welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), /* @__PURE__ */ React.createElement("div", { style: styles.tankFrame }, /* @__PURE__ */ React.createElement("div", { ref: mountRef, style: { position: "relative", lineHeight: 0 } }), /* @__PURE__ */ React.createElement("div", { style: styles.effectLayer }, effects.map((e) => /* @__PURE__ */ React.createElement("div", { key: e.id, style: { ...styles.effectText, left: e.left + "%", top: e.top + "%", animation: "floatUp 1.4s ease forwards" } }, e.text)), /* @__PURE__ */ React.createElement("div", { style: styles.tempBadge }, s.temp.toFixed(1), "℃"), showClock && /* @__PURE__ */ React.createElement("div", { style: styles.clockBadge }, "🕐 ", (/* @__PURE__ */ new Date()).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 9.5, opacity: 0.7, marginLeft: 4 } }, "JST")), rushBanner && /* @__PURE__ */ React.createElement("div", { style: styles.rushBanner }, rushBanner))), /* @__PURE__ */ React.createElement("p", { style: styles.hint }, "🖐️ ドラッグで回転・ピンチでズーム・タップで観察👀 ⛈️は洗濯機・🪩は踊り狂います"), obInst && obMood && obProf && /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, border: "1px solid rgba(255,176,58,.6)", marginBottom: 12, animation: "fadeIn .25s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "👀 ", PERSONAS[obInst.kind].emoji, " ", obInst.name, "（", PERSONAS[obInst.kind].title, obInst.temp ? "・RUSHのなかま" : "", "）"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: exitObserve, style: styles.closeBtn }, "✕ 戻る")), /* @__PURE__ */ React.createElement(Bar, { label: "元気", value: obMood.genki, color: "#7be87b", hint: obMood.genki > 70 ? "とっても元気！" : obMood.genki > 40 ? "ぼちぼち" : "ちょっとお疲れ…" }), /* @__PURE__ */ React.createElement(Bar, { label: "やる気", value: obMood.yaruki, color: "#ffb03a", hint: obMood.yaruki > 70 ? "メラメラ🔥" : obMood.yaruki > 40 ? "ふつう" : "おやすみモード…" }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, lineHeight: 2 } }, /* @__PURE__ */ React.createElement("div", null, "💭 いま考えてること：", /* @__PURE__ */ React.createElement("b", null, instThought(obInst, s, mode))), /* @__PURE__ */ React.createElement("div", null, "🎨 最近の趣味：", /* @__PURE__ */ React.createElement("b", null, obMood.hobby)), /* @__PURE__ */ React.createElement("div", null, "🍽️ 好きな食べ物：", /* @__PURE__ */ React.createElement("b", null, FAV_FOOD[obInst.kind])), /* @__PURE__ */ React.createElement("div", null, "🚉 最寄駅：", /* @__PURE__ */ React.createElement("b", null, obProf.station)), /* @__PURE__ */ React.createElement("div", null, "📅 シフト：", /* @__PURE__ */ React.createElement("b", null, obProf.shift)), /* @__PURE__ */ React.createElement("div", null, "🏝️ 出身：", /* @__PURE__ */ React.createElement("b", null, obProf.origin)), /* @__PURE__ */ React.createElement("div", null, "🤫 隠していること：", /* @__PURE__ */ React.createElement("b", null, obProf.secret))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, marginBottom: 6 } }, "👗 着せ替え（", PERSONAS[obInst.kind].title, "みんなに適用）"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, OUTFITS.map((o) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: o.id,
+      className: "aq-btn",
+      onClick: () => changeOutfit(obInst.kind, o.id),
+      style: { ...styles.modeChip, flex: "1 1 21%", ...outfits[obInst.kind] === o.id ? styles.modeChipOn : {} }
+    },
+    o.label
+  ))))), /* @__PURE__ */ React.createElement("div", { style: styles.menuTabs }, MENU_TABS.map((tb) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: tb.id,
+      className: "aq-btn",
+      onClick: () => setMenuTab(tb.id),
+      style: { ...styles.menuTab, ...menuTab === tb.id ? styles.menuTabOn : {} }
+    },
+    tb.label
+  ))), /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, marginTop: 8 } }, menuTab === "care" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, opacity: feedCooldown ? 0.45 : 1, pointerEvents: feedCooldown ? "none" : "auto" } }, FOODS.map((f) => /* @__PURE__ */ React.createElement("button", { key: f.id, className: "aq-btn", onClick: () => feed(f.id), style: styles.foodBtn }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 19 } }, f.emoji), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, textAlign: "left", marginLeft: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 13 } }, f.name), /* @__PURE__ */ React.createElement("span", { style: { display: "block", fontSize: 10.5, opacity: 0.7 } }, f.desc))))), feedCooldown && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 11.5, opacity: 0.7, textAlign: "center", margin: "8px 0 0" } }, "みんなもぐもぐ中…少し待ってね🐟"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: clean, style: { ...styles.btn, background: "#3aa0d8", width: "100%", marginTop: 10 } }, "🪣 水換えする")), menuTab === "light" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", animation: "fadeIn .2s ease" } }, Object.entries(MODES).map(([k, m]) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: k,
+      className: "aq-btn",
+      onClick: () => changeMode(k),
+      style: { ...styles.modeChip, flex: "1 1 30%", padding: "13px 6px", ...mode === k ? styles.modeChipOn : {} }
+    },
+    m.label
+  ))), menuTab === "status" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement(Bar, { label: "満腹度", value: s.satiety, color: "#ffb03a", hint: satietyLabel }), /* @__PURE__ */ React.createElement(Bar, { label: "水質", value: s.quality, color: "#5ad1e6", hint: qualityLabel }), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { style: styles.barHead }, /* @__PURE__ */ React.createElement("span", { style: styles.barLabel }, "ヒーター設定"), /* @__PURE__ */ React.createElement("span", { style: styles.barHint }, s.heater.toFixed(1), "℃ ・ ", tempLabel)), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "range",
+      min: 20,
+      max: 30,
+      step: 0.5,
+      defaultValue: s.heater,
+      onChange: (e) => {
+        stats.current.heater = Number(e.target.value);
+        save();
+      },
+      style: { width: "100%", accentColor: "#ff8a5c" }
+    }
+  ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 11, opacity: 0.65 } }, /* @__PURE__ */ React.createElement("span", null, "20℃"), /* @__PURE__ */ React.createElement("span", { style: { color: "#9be8a8" } }, "適温 24〜27℃"), /* @__PURE__ */ React.createElement("span", null, "30℃"))), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: toggleClock,
+      style: { ...styles.btn, background: showClock ? "#5a6a8a" : "#3ab87a", width: "100%", marginTop: 14 }
+    },
+    showClock ? "🕐 時計を非表示にする" : "🕐 時計を表示する（日本時間）"
+  )), menuTab === "play" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8, animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: addBuddy, style: { ...styles.btn, background: "#3ab87a" } }, "🐣 なかまを増やす（", buddyCount, "/", MAX_BUDDIES, "）"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(true), style: { ...styles.btn, background: "#8a6ee8" } }, "💬 おさかなチャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: openFortune, style: { ...styles.btn, background: "#e85d9e" } }, "🔮 チンアナゴ占い"))), /* @__PURE__ */ React.createElement("p", { style: styles.footnote }, "閉じている間も時間は流れるよ。AI会話：", aiStatus === "ok" ? "オンライン🟢" : aiStatus === "ng" ? "オフライン（自動おしゃべりモード）🟡" : "未確認", /* @__PURE__ */ React.createElement("br", null), "※Claudeの外で開いた共有版は、AIなしでも遊べる自動おしゃべりモードになります"), chatOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setChatOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "💬 おさかなチャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(false), style: styles.closeBtn }, "✕ 閉じる")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 } }, KIND_LIST.map((k) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: k,
+      className: "aq-btn",
+      onClick: () => setChatTarget(k),
+      style: { ...styles.modeChip, flex: "1 1 30%", ...chatTarget === k ? styles.modeChipOn : {} }
+    },
+    PERSONAS[k].emoji,
+    " ",
+    PERSONAS[k].name
+  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", background: "rgba(255,255,255,.06)", borderRadius: 12, padding: "6px 10px", marginBottom: 8 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: chatTarget, talkingRef }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12.5, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("b", null, PERSONAS[chatTarget].name), "（", PERSONAS[chatTarget].title, "）", /* @__PURE__ */ React.createElement("br", null), "きょうのきぶん：元気", chatMood.genki, "% / やる気", chatMood.yaruki, "%", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.75 } }, "趣味：", chatMood.hobby))), /* @__PURE__ */ React.createElement("div", { style: styles.chatList }, chats[chatTarget].length === 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", opacity: 0.6, fontSize: 12.5, padding: "18px 0" } }, PERSONAS[chatTarget].name, "に話しかけてみよう！"), chats[chatTarget].map((m, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("div", { style: { ...styles.bubble, ...m.role === "user" ? styles.bubbleUser : styles.bubbleFish } }, m.role === "assistant" && /* @__PURE__ */ React.createElement("span", { style: { marginRight: 4 } }, PERSONAS[chatTarget].emoji), m.content))), sending && /* @__PURE__ */ React.createElement("div", { style: { ...styles.bubble, ...styles.bubbleFish, opacity: 0.7 } }, PERSONAS[chatTarget].emoji, " …（かんがえちゅう）"), /* @__PURE__ */ React.createElement("div", { ref: chatBottomRef })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 8 } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      value: chatInput,
+      onChange: (e) => setChatInput(e.target.value),
+      onKeyDown: (e) => {
+        if (e.key === "Enter") sendChat();
+      },
+      placeholder: PERSONAS[chatTarget].name + "にメッセージ…",
+      style: styles.chatInput
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: sendChat,
+      disabled: sending,
+      style: { ...styles.btn, background: "#8a6ee8", padding: "10px 16px", opacity: sending ? 0.5 : 1 }
+    },
+    "送信"
+  )))), rushResult != null && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setRushResult(null) }, /* @__PURE__ */ React.createElement("div", { style: { ...styles.modal, textAlign: "center" }, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 38, marginBottom: 6 } }, "🎰🌈"), /* @__PURE__ */ React.createElement("b", { style: { fontSize: 18 } }, "RUSH RESULT"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 30, fontWeight: 700, margin: "14px 0", color: "#ffd24a" } }, "なかま ", rushResult, "匹 GET!!"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12.5, opacity: 0.75, lineHeight: 1.8 } }, "RUSHのなかまは3分たつと", /* @__PURE__ */ React.createElement("br", null), "おうちに帰ります…👋"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: () => setRushResult(null),
+      style: { ...styles.btn, background: "#e85d9e", marginTop: 14, width: "100%" }
+    },
+    "とじる"
+  ))), fortuneOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setFortuneOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🔮 にょろ先生のチンアナゴ占い"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setFortuneOpen(false), style: styles.closeBtn }, "✕ 閉じる")), fStep === "zodiac" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, lineHeight: 1.9 } }, "🌊 …こんにちは…にょろ先生です…", /* @__PURE__ */ React.createElement("br", null), "ぼくは", /* @__PURE__ */ React.createElement("b", null, "おとめ座専門"), "の占い師です…", /* @__PURE__ */ React.createElement("br", null), "あなたの星座を教えてください…"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 10 } }, ["おひつじ座", "おうし座", "ふたご座", "かに座", "しし座", "おとめ座", "てんびん座", "さそり座", "いて座", "やぎ座", "みずがめ座", "うお座"].map((z) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: z,
+      className: "aq-btn",
+      style: styles.modeChip,
+      onClick: () => {
+        if (z === "おとめ座") {
+          setFStep("q");
+        } else {
+          setFStep("sorry");
+        }
+      }
+    },
+    z
+  )))), fStep === "sorry" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 36, margin: "8px 0" } }, "🌊💦"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, lineHeight: 2 } }, "ご、ごめんなさい…", /* @__PURE__ */ React.createElement("br", null), "その星座の担当は、いま", /* @__PURE__ */ React.createElement("b", null, "砂の中で修行中"), "でして…びっ…", /* @__PURE__ */ React.createElement("br", null), "ぼくが占えるのは", /* @__PURE__ */ React.createElement("b", null, "おとめ座だけ"), "なんです…"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: () => setFStep("zodiac"),
+      style: { ...styles.btn, background: "#e85d9e", marginTop: 10, width: "100%" }
+    },
+    "星座を選び直す"
+  )), fStep === "q" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", null, "🔋 うんせいチャージ"), /* @__PURE__ */ React.createElement("b", null, fCharge, "%")), /* @__PURE__ */ React.createElement("div", { style: styles.barOuter }, /* @__PURE__ */ React.createElement("div", { style: { ...styles.barInner, width: fCharge + "%", background: fCharge >= 65 ? "#7be87b" : fCharge >= 40 ? "#ffd24a" : "#ff8a8a" } }))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 6px" } }, "しつもん ", fQIndex + 1, " / ", FQ.length, "（答えでチャージが変わります…）"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14.5, fontWeight: 700, margin: "0 0 12px" } }, "🌊 ", FQ[fQIndex].q), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, FQ[fQIndex].opts.map((o) => /* @__PURE__ */ React.createElement("button", { key: o.t, className: "aq-btn", style: styles.foodBtn, onClick: () => answerFortune(o) }, o.t)))), fStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "26px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 36 } }, "🌊🔮"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, opacity: 0.8 } }, "にょろ先生が砂の中で星を読んでいます…（チャージ", fCharge, "%）")), fStep === "result" && fResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12.5, opacity: 0.75, margin: "0 0 8px" } }, "本日のおとめ座 🔋チャージ", fCharge, "%", fFallback ? "（オフライン簡易版です…びっ）" : ""), /* @__PURE__ */ React.createElement("div", { style: styles.powerBox }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12 } }, "⚡ 今日の戦闘力"), /* @__PURE__ */ React.createElement("b", { style: { fontSize: 26, display: "block" } }, Number(fResult.power && fResult.power.value || 0).toLocaleString()), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11.5, opacity: 0.8 } }, fResult.power && fResult.power.text)), /* @__PURE__ */ React.createElement(FortuneRow, { icon: "🌟", label: "総合運", data: fResult.sogo }), /* @__PURE__ */ React.createElement(FortuneRow, { icon: "💗", label: "恋愛運", data: fResult.love }), /* @__PURE__ */ React.createElement(FortuneRow, { icon: "💼", label: "仕事運", data: fResult.work }), /* @__PURE__ */ React.createElement(FortuneRow, { icon: "💰", label: "金運", data: fResult.money }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, lineHeight: 2, marginTop: 8, background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, /* @__PURE__ */ React.createElement("div", null, "🚉 おすすめの駅：", /* @__PURE__ */ React.createElement("b", null, fResult.station)), /* @__PURE__ */ React.createElement("div", null, "🎰 おすすめパチンコ台：", /* @__PURE__ */ React.createElement("b", null, fResult.pachinko)), /* @__PURE__ */ React.createElement("div", null, "🍪 おすすめのお菓子：", /* @__PURE__ */ React.createElement("b", null, fResult.snack)), /* @__PURE__ */ React.createElement("div", null, "🎁 ラッキーアイテム：", /* @__PURE__ */ React.createElement("b", null, fResult.lucky_item)), /* @__PURE__ */ React.createElement("div", null, "🎨 ラッキーカラー：", /* @__PURE__ */ React.createElement("b", null, fResult.lucky_color))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 10 } }, "🌊「", fResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: openFortune,
+      style: { ...styles.btn, background: "#e85d9e", marginTop: 8, width: "100%" }
+    },
+    "もう一度占う"
+  )))));
+}
+function FortuneRow({ icon, label, data }) {
+  if (!data) return null;
+  const n = clamp(Math.round(data.stars || 3), 1, 5);
+  return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13.5 } }, /* @__PURE__ */ React.createElement("b", null, icon, " ", label), /* @__PURE__ */ React.createElement("span", { style: { color: "#ffd24a" } }, "★".repeat(n), "☆".repeat(5 - n))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12.5, opacity: 0.85, margin: "2px 0 0", lineHeight: 1.7 } }, data.text));
+}
+function Bar({ label, value, color, hint }) {
+  return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { style: styles.barHead }, /* @__PURE__ */ React.createElement("span", { style: styles.barLabel }, label), /* @__PURE__ */ React.createElement("span", { style: styles.barHint }, hint)), /* @__PURE__ */ React.createElement("div", { style: styles.barOuter }, /* @__PURE__ */ React.createElement("div", { style: { ...styles.barInner, width: clamp(value, 0, 100) + "%", background: color } })));
+}
+const styles = {
+  app: {
+    maxWidth: 560,
+    margin: "0 auto",
+    padding: "18px 14px 40px",
+    fontFamily: "'Zen Maru Gothic', system-ui, sans-serif",
+    color: "#eaf6ff",
+    minHeight: "100vh",
+    background: "linear-gradient(180deg, #06314f 0%, #04263c 100%)"
+  },
+  header: { textAlign: "center", marginBottom: 12 },
+  title: { fontSize: 24, margin: 0, letterSpacing: 1 },
+  subtitle: { fontSize: 12, opacity: 0.75, margin: "4px 0 0" },
+  weather: { fontSize: 12, opacity: 0.8, margin: "6px 0 0" },
+  welcome: {
+    background: "rgba(255, 210, 74, .15)",
+    border: "1px solid rgba(255,210,74,.5)",
+    borderRadius: 12,
+    padding: "10px 14px",
+    fontSize: 13.5,
+    marginBottom: 12,
+    cursor: "pointer"
+  },
+  tankFrame: { position: "relative", borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,.35)" },
+  effectLayer: { position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" },
+  effectText: {
+    position: "absolute",
+    transform: "translate(-50%, 0)",
+    fontSize: 15,
+    fontWeight: 700,
+    textShadow: "0 1px 6px rgba(0,0,0,.5)",
+    whiteSpace: "nowrap"
+  },
+  tempBadge: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    background: "rgba(0,0,0,.4)",
+    borderRadius: 20,
+    padding: "4px 10px",
+    fontSize: 12.5,
+    fontWeight: 700
+  },
+  clockBadge: {
+    position: "absolute",
+    top: 10,
+    left: 12,
+    background: "rgba(0,0,0,.4)",
+    borderRadius: 20,
+    padding: "4px 12px",
+    fontSize: 12.5,
+    fontWeight: 700,
+    fontVariantNumeric: "tabular-nums",
+    letterSpacing: 0.5
+  },
+  rushBanner: {
+    position: "absolute",
+    top: 10,
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "rgba(255,0,170,.78)",
+    borderRadius: 12,
+    padding: "8px 16px",
+    fontWeight: 700,
+    fontSize: 15,
+    whiteSpace: "nowrap",
+    animation: "rushPulse 1s ease infinite",
+    boxShadow: "0 2px 14px rgba(255,0,170,.5)"
+  },
+  hint: { fontSize: 11.5, opacity: 0.65, textAlign: "center", margin: "8px 0 14px" },
+  modeRow: { display: "flex", gap: 6, flexWrap: "wrap" },
+  menuTabs: { display: "flex", gap: 6, marginTop: 4 },
+  menuTab: {
+    flex: 1,
+    padding: "11px 4px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,.15)",
+    background: "rgba(255,255,255,.06)",
+    color: "#eaf6ff",
+    fontSize: 12.5,
+    fontWeight: 700,
+    fontFamily: "inherit",
+    cursor: "pointer"
+  },
+  menuTabOn: { background: "rgba(90,209,230,.28)", border: "1px solid rgba(90,209,230,.85)" },
+  modeChip: {
+    padding: "9px 6px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,.18)",
+    background: "rgba(255,255,255,.07)",
+    color: "#eaf6ff",
+    fontSize: 12.5,
+    fontFamily: "inherit",
+    fontWeight: 700,
+    cursor: "pointer"
+  },
+  modeChipOn: { background: "rgba(90, 209, 230, .25)", border: "1px solid rgba(90,209,230,.8)" },
+  card: { background: "rgba(255,255,255,.07)", borderRadius: 14, padding: "14px 16px" },
+  barHead: { display: "flex", justifyContent: "space-between", marginBottom: 4 },
+  barLabel: { fontSize: 13, fontWeight: 700 },
+  barHint: { fontSize: 12, opacity: 0.8 },
+  barOuter: { height: 10, borderRadius: 6, background: "rgba(0,0,0,.3)", overflow: "hidden" },
+  barInner: { height: "100%", borderRadius: 6, transition: "width .4s ease" },
+  btnRow: { display: "flex", gap: 8, marginTop: 12 },
+  btn: {
+    flex: 1,
+    padding: "13px 8px",
+    borderRadius: 12,
+    border: "none",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: 700,
+    fontFamily: "inherit",
+    cursor: "pointer",
+    boxShadow: "0 3px 10px rgba(0,0,0,.25)"
+  },
+  foodBtn: {
+    display: "flex",
+    alignItems: "center",
+    padding: "9px 10px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,.15)",
+    background: "rgba(255,255,255,.06)",
+    color: "#eaf6ff",
+    fontFamily: "inherit",
+    cursor: "pointer",
+    fontSize: 13
+  },
+  closeBtn: {
+    padding: "6px 10px",
+    borderRadius: 8,
+    border: "1px solid rgba(255,255,255,.25)",
+    background: "rgba(255,255,255,.08)",
+    color: "#eaf6ff",
+    fontSize: 12,
+    fontFamily: "inherit",
+    cursor: "pointer"
+  },
+  footnote: { fontSize: 11, opacity: 0.55, textAlign: "center", marginTop: 16, lineHeight: 1.8 },
+  modalBack: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,.55)",
+    zIndex: 50,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 14
+  },
+  modal: {
+    width: "100%",
+    maxWidth: 480,
+    maxHeight: "86vh",
+    overflowY: "auto",
+    background: "#0a3a57",
+    borderRadius: 16,
+    padding: "16px 16px 18px",
+    boxShadow: "0 10px 40px rgba(0,0,0,.5)",
+    animation: "fadeIn .2s ease"
+  },
+  chatList: {
+    maxHeight: "34vh",
+    overflowY: "auto",
+    background: "rgba(0,0,0,.2)",
+    borderRadius: 12,
+    padding: "10px 10px"
+  },
+  bubble: { maxWidth: "82%", padding: "8px 12px", borderRadius: 14, fontSize: 13.5, lineHeight: 1.7 },
+  bubbleUser: { background: "#3aa0d8", borderBottomRightRadius: 4 },
+  bubbleFish: { background: "rgba(255,255,255,.12)", borderBottomLeftRadius: 4 },
+  chatInput: {
+    flex: 1,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,.2)",
+    background: "rgba(255,255,255,.08)",
+    color: "#eaf6ff",
+    fontSize: 13.5,
+    fontFamily: "inherit",
+    outline: "none"
+  },
+  powerBox: {
+    textAlign: "center",
+    background: "linear-gradient(135deg, rgba(255,210,74,.18), rgba(232,93,158,.18))",
+    border: "1px solid rgba(255,210,74,.4)",
+    borderRadius: 12,
+    padding: "10px 12px",
+    marginBottom: 12
+  }
+};
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AquariumLife3D));
+</script>
+</body>
+</html>
