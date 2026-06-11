@@ -217,6 +217,62 @@ function localFortune(answers, charge) {
     hitokoto: pick(["びっくりしても、また顔を出せば大丈夫です…！", "ゆらゆら、自分のペースでいきましょう…", "今日のあなたは、砂の上に出ていて大丈夫な日です！"], 19)
   };
 }
+const CLOCK_ORDER = ["pill", "neon", "retro", "cute"];
+const CLOCK_NAMES = { pill: "シンプル", neon: "ネオン", retro: "レトロ", cute: "キュート" };
+const CLOCK_VARIANTS = {
+  pill: {},
+  neon: { background: "transparent", color: "#8ff7ff", textShadow: "0 0 8px #00e5ff, 0 0 18px #00e5ff", fontWeight: 800 },
+  retro: { background: "#03180a", color: "#39ff14", fontFamily: "'Courier New', monospace", border: "1px solid #1f7a2f", borderRadius: 6, textShadow: "0 0 6px #39ff14" },
+  cute: { background: "rgba(255,170,205,.92)", color: "#5a2040", borderRadius: 999, border: "1px solid #ffd0e4" }
+};
+const ZODIAC = [["♈", "おひつじ座"], ["♉", "おうし座"], ["♊", "ふたご座"], ["♋", "かに座"], ["♌", "しし座"], ["♍", "おとめ座"], ["♎", "てんびん座"], ["♏", "さそり座"], ["♐", "いて座"], ["♑", "やぎ座"], ["♒", "みずがめ座"], ["♓", "うお座"]];
+function localOracle() {
+  const h = hashStr((/* @__PURE__ */ new Date()).toDateString() + "oracle" + Math.floor(Math.random() * 5));
+  const pick = (arr, k) => arr[(h >> k) % arr.length];
+  return {
+    todo: pick(["机の上をひとつだけ片付けるのじゃ。運気の通り道ができる。", "10分早く寝る準備を始めるのである。", "誰かに「ありがとう」を一回多く言うのじゃ。", "深呼吸を3回。それだけで今日は勝ちである。"], 2),
+    food: pick(["納豆ごはん（マグロは食べてはならぬ）", "あたたかいうどん", "焼きおにぎり", "バナナと牛乳"], 5),
+    recipe: pick(["火を使わず、ただ感謝して食すのじゃ。", "醤油を「ありがたや」と唱えながら一周かけよ。", "弱火でじっくり。急いては事を仕損じるのである。", "海苔で巻くのじゃ。すべては巻けば解決する。"], 8),
+    kakugen: pick(["泳がぬマグロも、流れの一部である。", "賽銭の音は、心の音。チャリン。", "迷ったら、砂に潜るが良い。", "回らぬ寿司より、回る心。", "水槽の外もまた、水槽である。"], 11),
+    hitokoto: pick(["今日もよくお参りした。励めよ。", "そなたの水質、悪くないぞ。", "また来るがよい。チャリンを忘れずにな。"], 14)
+  };
+}
+function localNoriPlan() {
+  const r = Math.floor(Math.random() * 3);
+  const plans = [
+    [
+      { time: "朝8時", text: "起床。まず窓を開けて「海じゃん」と言う（海じゃなくても）" },
+      { time: "朝9時", text: "朝ごはんは納豆トースト。意外とアリだべ" },
+      { time: "昼12時", text: "近所でいちばん安いラーメンを真顔で食べる" },
+      { time: "昼14時", text: "公園のハトに敬語で話しかける" },
+      { time: "夕方17時", text: "スーパーで半額シールが貼られる瞬間に立ち会う" },
+      { time: "夜19時", text: "晩ごはんは鍋。具は冷蔵庫と相談だべ" },
+      { time: "夜21時", text: "風呂で今日のMVP（自分）を発表する" },
+      { time: "夜23時", text: "寝る。海苔は乾燥が大事。人は睡眠が大事だべ" }
+    ],
+    [
+      { time: "朝9時", text: "起床。布団を3秒だけ畳むフリをする" },
+      { time: "朝10時", text: "喫茶店でモーニング。トーストの厚さに敬意を払う" },
+      { time: "昼13時", text: "浅草を散歩。Switchの転売はしない（しないことに意味がある）" },
+      { time: "昼15時", text: "おやつにメロンパン。外側だけ先に食べる派に転向する" },
+      { time: "夕方18時", text: "電器屋で4Kテレビの前に立ち、何も買わずに帰る" },
+      { time: "夜20時", text: "晩ごはんは手巻き寿司。海苔（おれ）の出番だべ！" },
+      { time: "夜22時", text: "ストレッチしながら明日の言い訳を考える" },
+      { time: "夜24時", text: "寝る。夢の中でも巻いていけだべ" }
+    ],
+    [
+      { time: "朝7時", text: "早起きして勝った気分になる（実際勝ち）" },
+      { time: "朝8時", text: "卵かけごはん。醤油は時計回りにかけるべ" },
+      { time: "昼11時", text: "図書館で一番分厚い本を持ち上げ、満足して帰る" },
+      { time: "昼13時", text: "昼はカレー。福神漬けの正しい位置について考える" },
+      { time: "昼15時", text: "川を見に行く。流れに「わかるよ」と言う" },
+      { time: "夜18時", text: "餃子を焼く。羽根つきに挑戦して羽根だけ成功させる" },
+      { time: "夜21時", text: "明日のTODOを書いて、今日の分は見なかったことにする" },
+      { time: "夜23時", text: "寝るべ。おやすみ、いい乾燥を" }
+    ]
+  ];
+  return { plan: plans[r], hitokoto: ["今日も巻いていくべ！", "ノリで生きていいんだべ", "プランは破ってもOK。それもノリだべ"][r] };
+}
 function creatureMood(kind, seed, s) {
   const h = hashStr((/* @__PURE__ */ new Date()).toDateString() + kind + seed);
   const tempOk = s.temp >= 24 && s.temp <= 27;
@@ -247,7 +303,10 @@ const THOUGHTS = {
   crab: ["この砂、掘りごたえあるぜ", "脱皮のタイミングいつにすっかな", "ハサミの調子は上々だぜ"],
   jelly: ["ふわふわ…むしんろん…", "考えない、のがコツなのー", "水流に身をまかせ中…"],
   hermit: ["そろそろ広い殻に住みたいっす", "家賃ゼロ、最高っす", "殻の中を模様替えしたっす"],
-  anemone: ["今日も水槽は平和じゃのう", "カノンの帰りを待っとるんじゃ", "動かぬが勝ちじゃ"]
+  anemone: ["今日も水槽は平和じゃのう", "カノンの帰りを待っとるんじゃ", "動かぬが勝ちじゃ"],
+  philo: ["泳ぐとは、止まらないことの言い換えにすぎない…", "水槽の外を知らぬ我々は、外のない世界を生きているのか", "エサは降る。なぜと問うた者から眠りにつく", "ガラスの向こうに見えているのは、世界か、それとも自分か"],
+  genius: ["水流の渦度から次の水換え時刻を逆算済み", "泡の上昇速度は約0.9m/s。ゆえにこの水槽の経済は健全", "フェルマーの最終定理、ヒレで証明できる気がしてきた", "エサの落下軌道、微分したら明日の天気が分かった"],
+  aho: ["水って…飲めるのか…？", "自分の名前、たまに忘れる", "右と左、どっちが右だっけ", "泡、食べたら泡の味がした", "きのう寝たら今日になってた。すごい"]
 };
 function instThought(inst, s, mk) {
   const slot = Math.floor(Date.now() / 9e3);
@@ -255,6 +314,11 @@ function instThought(inst, s, mk) {
   if (mk === "storm") return pick(THOUGHTS.storm);
   if (mk === "dance") return pick(THOUGHTS.dance);
   if (mk === "fever") return pick(THOUGHTS.fever);
+  const wr = (slot * 31 + inst.seed) % 100;
+  if (wr < 12) {
+    const cat = [THOUGHTS.philo, THOUGHTS.genius, THOUGHTS.aho][(slot + inst.seed) % 3];
+    return cat[(slot + inst.seed) % cat.length];
+  }
   if (s.satiety < 25) return pick(THOUGHTS.hungry);
   if (s.quality < 35) return pick(THOUGHTS.dirty);
   return pick(THOUGHTS[inst.kind]);
@@ -330,6 +394,40 @@ function buildAvatarModel(type) {
     mouth.scale.set(0.7, 0.45, 0.6);
     group.add(mouth);
     group.position.y = 0.35;
+  } else if (type === "kamisama") {
+    const top = new THREE.MeshStandardMaterial({ color: 1915502, roughness: 0.35, metalness: 0.45 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 22, 14), top);
+    body.scale.set(1.85, 0.8, 0.65);
+    group.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.55, 22, 14), new THREE.MeshStandardMaterial({ color: 14214382, metalness: 0.5, roughness: 0.3 }));
+    belly.scale.set(1.75, 0.68, 0.6);
+    belly.position.y = -0.12;
+    group.add(belly);
+    [0.22, -0.22].forEach((z) => {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), dark);
+      e.position.set(0.75, 0.12, z);
+      group.add(e);
+    });
+    const tMat = new THREE.MeshStandardMaterial({ color: 1454170 });
+    [1, -1].forEach((sd) => {
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.55, 6), tMat);
+      fin.position.set(-1.12, sd * 0.18, 0);
+      fin.rotation.z = sd * 2.3;
+      group.add(fin);
+    });
+    const gold = new THREE.MeshStandardMaterial({ color: 16765514, emissive: 12290048, emissiveIntensity: 0.6, metalness: 0.6, roughness: 0.3 });
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.045, 10, 24), gold);
+    halo.position.set(0.1, 0.78, 0);
+    halo.rotation.x = Math.PI / 2.4;
+    group.add(halo);
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.16, 10), gold);
+    crown.position.set(0.25, 0.5, 0);
+    group.add(crown);
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), dark);
+    mouth.position.set(0.98, -0.02, 0);
+    mouth.scale.set(0.7, 0.45, 0.6);
+    group.add(mouth);
+    group.position.y = 0.3;
   } else if (type === "katsuo") {
     const top = new THREE.MeshStandardMaterial({ color: 2771594, roughness: 0.4, metalness: 0.3 });
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 22, 14), top);
@@ -488,7 +586,7 @@ function ChatAvatar({ type, talkingRef }) {
       last = now;
       t += dt;
       group.position.y = baseY + Math.sin(t * 2) * 0.05;
-      group.rotation.y = (type === "fish" || type === "katsuo" ? -0.85 : 0) + Math.sin(t * 0.8) * 0.1;
+      group.rotation.y = (type === "fish" || type === "katsuo" || type === "kamisama" ? -0.85 : 0) + Math.sin(t * 0.8) * 0.1;
       const talking = talkingRef.current > Date.now();
       if (mouth) mouth.scale.y = talking ? 0.35 + Math.abs(Math.sin(t * 13)) * 1.5 : 0.45;
       renderer.render(scene, camera);
@@ -518,6 +616,17 @@ function AquariumLife3D() {
   const [rushBanner, setRushBanner] = useState(null);
   const [rushResult, setRushResult] = useState(null);
   const [showClock, setShowClock] = useState(true);
+  const [clockStyle, setClockStyle] = useState("pill");
+  const [standby, setStandby] = useState(false);
+  const [taikinOpen, setTaikinOpen] = useState(false);
+  const [oracleOpen, setOracleOpen] = useState(false);
+  const [oracleStep, setOracleStep] = useState("loading");
+  const [oracleResult, setOracleResult] = useState(null);
+  const [oracleFallback, setOracleFallback] = useState(false);
+  const [noriOpen, setNoriOpen] = useState(false);
+  const [noriStep, setNoriStep] = useState("loading");
+  const [noriResult, setNoriResult] = useState(null);
+  const [noriFallback, setNoriFallback] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatTarget, setChatTarget] = useState("fish");
   const [chats, setChats] = useState({ fish: [], katsuo: [], eel: [], crab: [], jelly: [], hermit: [], anemone: [] });
@@ -544,8 +653,11 @@ function AquariumLife3D() {
   const rushGained = useRef(0);
   const chargeRef = useRef(50);
   const clockRef = useRef(true);
+  const clockStyleRef = useRef("pill");
+  const oracleBusy = useRef(false);
+  const doNoriRef = useRef(null);
   const save = useCallback(async () => {
-    const data = JSON.stringify({ ...stats.current, mode: modeRef.current, outfits: outfitsRef.current, buddies: buddiesRef.current, clock: clockRef.current, lastSeen: Date.now() });
+    const data = JSON.stringify({ ...stats.current, mode: modeRef.current, outfits: outfitsRef.current, buddies: buddiesRef.current, clock: clockRef.current, clockStyle: clockStyleRef.current, lastSeen: Date.now() });
     await persist.set(STORAGE_KEY, data);
   }, []);
   useEffect(() => {
@@ -573,6 +685,10 @@ function AquariumLife3D() {
           if (d.clock === false) {
             clockRef.current = false;
             setShowClock(false);
+          }
+          if (d.clockStyle && CLOCK_VARIANTS[d.clockStyle]) {
+            clockStyleRef.current = d.clockStyle;
+            setClockStyle(d.clockStyle);
           }
           if (elapsed > 600) {
             const hh = Math.floor(elapsed / 3600), mm = Math.floor(elapsed % 3600 / 60);
@@ -641,7 +757,7 @@ function AquariumLife3D() {
     W.scene = scene;
     W.camera = camera;
     W.cam = { theta: 0, phi: 1.25, radius: 11.5, radiusGoal: 11.5, target: new THREE.Vector3(0, 2.4, 0), targetGoal: new THREE.Vector3(0, 2.4, 0) };
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     mount.appendChild(renderer.domElement);
     renderer.domElement.style.display = "block";
@@ -680,11 +796,13 @@ function AquariumLife3D() {
     const sand = new THREE.Mesh(new THREE.PlaneGeometry(12.2, 6.2), new THREE.MeshStandardMaterial({ color: 15257500, roughness: 1 }));
     sand.rotation.x = -Math.PI / 2;
     scene.add(sand);
+    const sandBumps = [];
     [[-2.5, -1.2, 1.6], [2.2, 0.8, 1.2], [4.5, 1.8, 1]].forEach(([x, z, r]) => {
       const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), new THREE.MeshStandardMaterial({ color: 14599310, roughness: 1 }));
       m.scale.y = 0.25;
       m.position.set(x, 0.02, z);
       scene.add(m);
+      sandBumps.push(m);
     });
     const rockMat = new THREE.MeshStandardMaterial({ color: 7043717, roughness: 0.95 });
     const rock1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1, 0), rockMat);
@@ -703,6 +821,41 @@ function AquariumLife3D() {
     });
     coral.position.set(1.2, 0, -1.6);
     scene.add(coral);
+    const saisen = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({ color: 9067050, roughness: 0.8 });
+    const woodDark = new THREE.MeshStandardMaterial({ color: 6175256, roughness: 0.85 });
+    const sBody = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.5, 0.62), woodMat);
+    sBody.position.y = 0.25;
+    saisen.add(sBody);
+    for (let i = 0; i < 4; i++) {
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.56), woodDark);
+      slat.position.set(-0.33 + i * 0.22, 0.52, 0);
+      saisen.add(slat);
+    }
+    const sBase = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.08, 0.72), woodDark);
+    sBase.position.y = 0.04;
+    saisen.add(sBase);
+    saisen.position.set(-1.75, 0, 1.05);
+    scene.add(saisen);
+    W.saisenPos = new THREE.Vector3(-1.75, 0.6, 1.05);
+    const nori = new THREE.Group();
+    const noriMat = new THREE.MeshStandardMaterial({ color: 1919530, roughness: 0.7, side: THREE.DoubleSide });
+    const sheet = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.95, 0.045), noriMat);
+    nori.add(sheet);
+    [-0.13, 0.13].forEach((x) => {
+      const ew = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 16777215 }));
+      ew.position.set(x, 0.18, 0.05);
+      const ep = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), new THREE.MeshBasicMaterial({ color: 2236962 }));
+      ep.position.set(x, 0.18, 0.09);
+      nori.add(ew, ep);
+    });
+    const noriHit = new THREE.Mesh(new THREE.SphereGeometry(0.85, 8, 6), hitMat);
+    noriHit.userData = { kind: "nori", id: -1 };
+    W.hitTargets.push(noriHit);
+    nori.add(noriHit);
+    nori.position.set(3.1, 3.4, 0.4);
+    scene.add(nori);
+    W.nori = nori;
     const attachOutfits = (parent, kind, pos, scale) => {
       const set = {};
       ["hat", "ribbon", "crown"].forEach((id) => {
@@ -1094,6 +1247,16 @@ function AquariumLife3D() {
         W.pellets.push({ mesh: m, food, landed: false, landedAt: 0, seed: rand(0, 10), born: performance.now() });
       }
     };
+    W.coins = [];
+    const coinGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.035, 14);
+    const coinMat = new THREE.MeshStandardMaterial({ color: 16765514, emissive: 11171584, emissiveIntensity: 0.5, metalness: 0.6, roughness: 0.3 });
+    W.spawnCoin = () => {
+      const m = new THREE.Mesh(coinGeo, coinMat);
+      m.position.set(W.saisenPos.x + rand(-0.1, 0.1), 6.3, W.saisenPos.z + rand(-0.08, 0.08));
+      m.rotation.x = Math.PI / 2;
+      scene.add(m);
+      W.coins.push({ mesh: m });
+    };
     W.fw = { rockets: [], parts: [], nextLaunch: 0 };
     const partGeo = new THREE.SphereGeometry(0.05, 6, 6);
     const rocketGeo = new THREE.SphereGeometry(0.06, 6, 6);
@@ -1143,6 +1306,11 @@ function AquariumLife3D() {
       const hits = ray.intersectObjects(W.hitTargets, false);
       if (hits.length === 0) return;
       const { kind, id } = hits[0].object.userData;
+      if (kind === "nori") {
+        addEffect(W.nori.position.clone().add(new THREE.Vector3(0, 0.8, 0)), "ノリノリだべ！🌿", W);
+        if (doNoriRef.current) doNoriRef.current();
+        return;
+      }
       const inst = W.all.find((i) => i.id === id);
       if (!inst) return;
       if (kind === "eel" && inst.emerge > 0.3 && modeRef.current !== "storm") {
@@ -1604,6 +1772,24 @@ function AquariumLife3D() {
           }
         }
       }
+      if (W.nori) {
+        W.nori.position.x = 3.1 + Math.sin(t * 0.35) * 1.4;
+        W.nori.position.y = 3.4 + Math.sin(t * 1.1) * 0.5;
+        W.nori.rotation.z = Math.sin(t * 1.7) * 0.25;
+        W.nori.rotation.y = Math.sin(t * 0.6) * 0.6;
+      }
+      if (W.coins.length) {
+        for (const c of W.coins) {
+          c.mesh.position.y -= 2.2 * dt;
+          c.mesh.rotation.x += dt * 6;
+          if (c.mesh.position.y <= 0.78) {
+            c.dead = true;
+            scene.remove(c.mesh);
+            addEffect(new THREE.Vector3(W.saisenPos.x, 1.4, W.saisenPos.z), "チャリン✨", W);
+          }
+        }
+        W.coins = W.coins.filter((c) => !c.dead);
+      }
       for (const b of bubbles) {
         b.position.y += 0.9 * dt;
         b.position.x += Math.sin(t * 2 + b.userData.seed) * 0.2 * dt;
@@ -1675,6 +1861,65 @@ function AquariumLife3D() {
     clockRef.current = !clockRef.current;
     setShowClock(clockRef.current);
     save();
+  };
+  const cycleClock = () => {
+    const i = (CLOCK_ORDER.indexOf(clockStyleRef.current) + 1) % CLOCK_ORDER.length;
+    clockStyleRef.current = CLOCK_ORDER[i];
+    setClockStyle(CLOCK_ORDER[i]);
+    save();
+  };
+  const taikin = (inst) => {
+    const W = worldRef.current;
+    if (!W) return;
+    W.removeInst(inst);
+    buddiesRef.current = buddiesRef.current.filter((b) => b.seed !== inst.seed);
+    effectCenter(inst.name + "、おつかれさまでした👋");
+    save();
+    setTick((v) => v + 1);
+  };
+  const doSaisen = () => {
+    if (oracleBusy.current) return;
+    const W = worldRef.current;
+    if (!W) return;
+    oracleBusy.current = true;
+    W.spawnCoin();
+    effectCenter("⛩️ エ賽銭、投入…");
+    setTimeout(async () => {
+      setOracleOpen(true);
+      setOracleStep("loading");
+      setOracleFallback(false);
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+      const prompt = "あなたは水槽にまつられている神様のマグロ「カミサマグロ」。参拝者がエ賽銭（特別なエサのお賽銭）を賽銭箱に投じた。荘厳だが少しゆるい神様口調（「〜である」「〜じゃ」）で、今日(" + today + ')の神託を授けよ。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"todo":"今日やるべきこと1〜2文","food":"今日食べた方がいいもの","recipe":"その調理方法（ゆるくてよい）1〜2文","kakugen":"ありがたい格言。意味不明でも可。1文","hitokoto":"締めの神様の一言"}';
+      try {
+        const raw = await callClaude([{ role: "user", content: prompt }]);
+        setOracleResult(JSON.parse(raw.replace(/```json|```/g, "").trim()));
+        setAiStatus("ok");
+      } catch (e) {
+        setOracleResult(localOracle());
+        setOracleFallback(true);
+        setAiStatus("ng");
+      }
+      setOracleStep("result");
+      talkingRef.current = Date.now() + 4500;
+      oracleBusy.current = false;
+    }, 2200);
+  };
+  const doNori = async () => {
+    setNoriOpen(true);
+    setNoriStep("loading");
+    setNoriFallback(false);
+    const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+    const prompt = "あなたは水槽にただよう、ノリがいい海苔のキャラ「ノリ海苔」。ハイテンションで語尾は「〜だべ」。暇な人のために今日(" + today + ')の起床から就寝までの1日プランをタイムスケジュール形式で提案する。食事の提案も必ず入れる。シュールでクスッと笑える提案を大歓迎（例: 公園のハトに敬語で話しかける、電器屋で4Kテレビを見るだけ見て帰る）。ただし違法行為・迷惑行為は提案しない。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"plan":[{"time":"朝8時","text":"やること"}を7〜9項目、寝るまで],"hitokoto":"締めのノリのいい一言"}';
+    try {
+      const raw = await callClaude([{ role: "user", content: prompt }]);
+      setNoriResult(JSON.parse(raw.replace(/```json|```/g, "").trim()));
+      setAiStatus("ok");
+    } catch (e) {
+      setNoriResult(localNoriPlan());
+      setNoriFallback(true);
+      setAiStatus("ng");
+    }
+    setNoriStep("result");
   };
   const exitObserve = () => {
     observeRef.current = null;
@@ -1829,18 +2074,39 @@ function AquariumLife3D() {
   const obProf = obInst ? instProfile(obInst.kind, obInst.seed) : null;
   const chatMood = creatureMood(chatTarget, 0, s);
   const buddyCount = buddiesRef.current.length;
+  const clockNow = (/* @__PURE__ */ new Date()).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false });
+  const dateNow = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "long", day: "numeric", weekday: "short" });
+  const recFood = FOODS[hashStr((/* @__PURE__ */ new Date()).toDateString() + "rec") % FOODS.length];
+  const buddyList = worldRef.current ? worldRef.current.all.filter((i) => !i.temp && buddiesRef.current.some((b) => b.seed === i.seed)) : [];
+  doNoriRef.current = doNori;
   if (!loaded) {
     return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, textAlign: "center", padding: 40 } }, "水槽の準備中…🫧"));
   }
   return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("style", null, `
-        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Mochiy+Pop+One&display=swap');
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         .aq-btn { transition: transform .1s ease, opacity .2s; }
         .aq-btn:active { transform: scale(.94); }
         @keyframes floatUp { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -36px); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes rushPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
-      `), /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…")), welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), /* @__PURE__ */ React.createElement("div", { style: styles.tankFrame }, /* @__PURE__ */ React.createElement("div", { ref: mountRef, style: { position: "relative", lineHeight: 0 } }), /* @__PURE__ */ React.createElement("div", { style: styles.effectLayer }, effects.map((e) => /* @__PURE__ */ React.createElement("div", { key: e.id, style: { ...styles.effectText, left: e.left + "%", top: e.top + "%", animation: "floatUp 1.4s ease forwards" } }, e.text)), /* @__PURE__ */ React.createElement("div", { style: styles.tempBadge }, s.temp.toFixed(1), "℃"), showClock && /* @__PURE__ */ React.createElement("div", { style: styles.clockBadge }, "🕐 ", (/* @__PURE__ */ new Date()).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 9.5, opacity: 0.7, marginLeft: 4 } }, "JST")), rushBanner && /* @__PURE__ */ React.createElement("div", { style: styles.rushBanner }, rushBanner))), /* @__PURE__ */ React.createElement("p", { style: styles.hint }, "🖐️ ドラッグで回転・ピンチでズーム・タップで観察👀 ⛈️は洗濯機・🪩は踊り狂います"), obInst && obMood && obProf && /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, border: "1px solid rgba(255,176,58,.6)", marginBottom: 12, animation: "fadeIn .25s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "👀 ", PERSONAS[obInst.kind].emoji, " ", obInst.name, "（", PERSONAS[obInst.kind].title, obInst.temp ? "・RUSHのなかま" : "", "）"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: exitObserve, style: styles.closeBtn }, "✕ 戻る")), /* @__PURE__ */ React.createElement(Bar, { label: "元気", value: obMood.genki, color: "#7be87b", hint: obMood.genki > 70 ? "とっても元気！" : obMood.genki > 40 ? "ぼちぼち" : "ちょっとお疲れ…" }), /* @__PURE__ */ React.createElement(Bar, { label: "やる気", value: obMood.yaruki, color: "#ffb03a", hint: obMood.yaruki > 70 ? "メラメラ🔥" : obMood.yaruki > 40 ? "ふつう" : "おやすみモード…" }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, lineHeight: 2 } }, /* @__PURE__ */ React.createElement("div", null, "💭 いま考えてること：", /* @__PURE__ */ React.createElement("b", null, instThought(obInst, s, mode))), /* @__PURE__ */ React.createElement("div", null, "🎨 最近の趣味：", /* @__PURE__ */ React.createElement("b", null, obMood.hobby)), /* @__PURE__ */ React.createElement("div", null, "🍽️ 好きな食べ物：", /* @__PURE__ */ React.createElement("b", null, FAV_FOOD[obInst.kind])), /* @__PURE__ */ React.createElement("div", null, "🚉 最寄駅：", /* @__PURE__ */ React.createElement("b", null, obProf.station)), /* @__PURE__ */ React.createElement("div", null, "📅 シフト：", /* @__PURE__ */ React.createElement("b", null, obProf.shift)), /* @__PURE__ */ React.createElement("div", null, "🏝️ 出身：", /* @__PURE__ */ React.createElement("b", null, obProf.origin)), /* @__PURE__ */ React.createElement("div", null, "🤫 隠していること：", /* @__PURE__ */ React.createElement("b", null, obProf.secret))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, marginBottom: 6 } }, "👗 着せ替え（", PERSONAS[obInst.kind].title, "みんなに適用）"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, OUTFITS.map((o) => /* @__PURE__ */ React.createElement(
+      `), !standby && /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…")), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      onClick: cycleClock,
+      style: { fontSize: 50, fontWeight: 800, fontVariantNumeric: "tabular-nums", letterSpacing: 1, lineHeight: 1.05, cursor: "pointer", ...CLOCK_VARIANTS[clockStyle], background: "transparent", border: "none", borderRadius: 0, padding: 0 }
+    },
+    clockStyle === "cute" ? "🐠 " : "",
+    clockNow
+  ), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, opacity: 0.7, marginTop: 6 } }, dateNow, "・JST・時計タップでデザイン変更")), /* @__PURE__ */ React.createElement("div", { style: styles.tankFrame }, /* @__PURE__ */ React.createElement("div", { ref: mountRef, style: { position: "relative", lineHeight: 0 } }), /* @__PURE__ */ React.createElement("div", { style: styles.effectLayer }, effects.map((e) => /* @__PURE__ */ React.createElement("div", { key: e.id, style: { ...styles.effectText, left: e.left + "%", top: e.top + "%", animation: "floatUp 1.4s ease forwards" } }, e.text)), /* @__PURE__ */ React.createElement("div", { style: styles.tempBadge }, s.temp.toFixed(1), "℃"), showClock && !standby && /* @__PURE__ */ React.createElement("div", { style: { ...styles.clockBadge, ...CLOCK_VARIANTS[clockStyle], pointerEvents: "auto", cursor: "pointer" }, onClick: cycleClock }, clockStyle === "cute" ? "🐠" : "🕐", " ", clockNow, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 9.5, opacity: 0.7, marginLeft: 4 } }, "JST")), rushBanner && /* @__PURE__ */ React.createElement("div", { style: styles.rushBanner }, rushBanner))), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 18, fontSize: 14, lineHeight: 2.1, animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", null, "🌤️ 横浜 ", weather && !weather.err ? wxEmoji(weather.code) + " " + weather.temp + "℃" : "—", "　♨️ 水温 ", s.temp.toFixed(1), "℃"), /* @__PURE__ */ React.createElement("div", null, "🍽️ 今日のおすすめごはん：", recFood.emoji, " ", /* @__PURE__ */ React.createElement("b", null, recFood.name)), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: () => setStandby(false),
+      style: { ...styles.closeBtn, marginTop: 16, padding: "9px 20px" }
+    },
+    "✕ 待受モードをやめる"
+  )), !standby && /* @__PURE__ */ React.createElement("p", { style: styles.hint }, "🖐️ ドラッグ回転・ピンチ拡大・タップで観察👀"), !standby && obInst && obMood && obProf && /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, border: "1px solid rgba(255,176,58,.6)", marginBottom: 12, animation: "fadeIn .25s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "👀 ", PERSONAS[obInst.kind].emoji, " ", obInst.name, "（", PERSONAS[obInst.kind].title, obInst.temp ? "・RUSHのなかま" : "", "）"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: exitObserve, style: styles.closeBtn }, "✕ 戻る")), /* @__PURE__ */ React.createElement(Bar, { label: "元気", value: obMood.genki, color: "#7be87b", hint: obMood.genki > 70 ? "とっても元気！" : obMood.genki > 40 ? "ぼちぼち" : "ちょっとお疲れ…" }), /* @__PURE__ */ React.createElement(Bar, { label: "やる気", value: obMood.yaruki, color: "#ffb03a", hint: obMood.yaruki > 70 ? "メラメラ🔥" : obMood.yaruki > 40 ? "ふつう" : "おやすみモード…" }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, lineHeight: 2 } }, /* @__PURE__ */ React.createElement("div", null, "💭 いま考えてること：", /* @__PURE__ */ React.createElement("b", null, instThought(obInst, s, mode))), /* @__PURE__ */ React.createElement("div", null, "🎨 最近の趣味：", /* @__PURE__ */ React.createElement("b", null, obMood.hobby)), /* @__PURE__ */ React.createElement("div", null, "🍽️ 好きな食べ物：", /* @__PURE__ */ React.createElement("b", null, FAV_FOOD[obInst.kind])), /* @__PURE__ */ React.createElement("div", null, "🚉 最寄駅：", /* @__PURE__ */ React.createElement("b", null, obProf.station)), /* @__PURE__ */ React.createElement("div", null, "📅 シフト：", /* @__PURE__ */ React.createElement("b", null, obProf.shift)), /* @__PURE__ */ React.createElement("div", null, "🏝️ 出身：", /* @__PURE__ */ React.createElement("b", null, obProf.origin)), /* @__PURE__ */ React.createElement("div", null, "🤫 隠していること：", /* @__PURE__ */ React.createElement("b", null, obProf.secret))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, marginBottom: 6 } }, "👗 着せ替え（", PERSONAS[obInst.kind].title, "みんなに適用）"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, OUTFITS.map((o) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: o.id,
@@ -1849,7 +2115,7 @@ function AquariumLife3D() {
       style: { ...styles.modeChip, flex: "1 1 21%", ...outfits[obInst.kind] === o.id ? styles.modeChipOn : {} }
     },
     o.label
-  ))))), /* @__PURE__ */ React.createElement("div", { style: styles.menuTabs }, MENU_TABS.map((tb) => /* @__PURE__ */ React.createElement(
+  ))))), !standby && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.menuTabs }, MENU_TABS.map((tb) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: tb.id,
@@ -1858,7 +2124,7 @@ function AquariumLife3D() {
       style: { ...styles.menuTab, ...menuTab === tb.id ? styles.menuTabOn : {} }
     },
     tb.label
-  ))), /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, marginTop: 8 } }, menuTab === "care" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, opacity: feedCooldown ? 0.45 : 1, pointerEvents: feedCooldown ? "none" : "auto" } }, FOODS.map((f) => /* @__PURE__ */ React.createElement("button", { key: f.id, className: "aq-btn", onClick: () => feed(f.id), style: styles.foodBtn }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 19 } }, f.emoji), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, textAlign: "left", marginLeft: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 13 } }, f.name), /* @__PURE__ */ React.createElement("span", { style: { display: "block", fontSize: 10.5, opacity: 0.7 } }, f.desc))))), feedCooldown && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 11.5, opacity: 0.7, textAlign: "center", margin: "8px 0 0" } }, "みんなもぐもぐ中…少し待ってね🐟"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: clean, style: { ...styles.btn, background: "#3aa0d8", width: "100%", marginTop: 10 } }, "🪣 水換えする")), menuTab === "light" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", animation: "fadeIn .2s ease" } }, Object.entries(MODES).map(([k, m]) => /* @__PURE__ */ React.createElement(
+  ))), /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, marginTop: 8 } }, menuTab === "care" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, opacity: feedCooldown ? 0.45 : 1, pointerEvents: feedCooldown ? "none" : "auto" } }, FOODS.map((f) => /* @__PURE__ */ React.createElement("button", { key: f.id, className: "aq-btn", onClick: () => feed(f.id), style: styles.foodBtn, title: f.desc }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 23, lineHeight: 1 } }, f.emoji), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 9.5, lineHeight: 1.25, textAlign: "center" } }, f.name)))), feedCooldown && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 11.5, opacity: 0.7, textAlign: "center", margin: "8px 0 0" } }, "みんなもぐもぐ中…少し待ってね🐟"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: clean, style: { ...styles.btn, background: "#3aa0d8", width: "100%", marginTop: 10 } }, "🪣 水換え")), menuTab === "light" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", animation: "fadeIn .2s ease" } }, Object.entries(MODES).map(([k, m]) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: k,
@@ -1889,7 +2155,31 @@ function AquariumLife3D() {
       style: { ...styles.btn, background: showClock ? "#5a6a8a" : "#3ab87a", width: "100%", marginTop: 14 }
     },
     showClock ? "🕐 時計を非表示にする" : "🕐 時計を表示する（日本時間）"
-  )), menuTab === "play" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8, animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: addBuddy, style: { ...styles.btn, background: "#3ab87a" } }, "🐣 なかまを増やす（", buddyCount, "/", MAX_BUDDIES, "）"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(true), style: { ...styles.btn, background: "#8a6ee8" } }, "💬 おさかなチャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: openFortune, style: { ...styles.btn, background: "#e85d9e" } }, "🔮 チンアナゴ占い"))), /* @__PURE__ */ React.createElement("p", { style: styles.footnote }, "閉じている間も時間は流れるよ。AI会話：", aiStatus === "ok" ? "オンライン🟢" : aiStatus === "ng" ? "オフライン（自動おしゃべりモード）🟡" : "未確認", /* @__PURE__ */ React.createElement("br", null), "※Claudeの外で開いた共有版は、AIなしでも遊べる自動おしゃべりモードになります"), chatOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setChatOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "💬 おさかなチャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(false), style: styles.closeBtn }, "✕ 閉じる")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 } }, KIND_LIST.map((k) => /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 11, opacity: 0.65, textAlign: "center", margin: "8px 0 0" } }, "水槽の時計をタップでデザイン変更（いま：", CLOCK_NAMES[clockStyle], "）")), menuTab === "play" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: addBuddy, style: { ...styles.btn, background: "#3ab87a" } }, "🐣 なかま追加 ", buddyCount, "/", MAX_BUDDIES), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setTaikinOpen(true), style: { ...styles.btn, background: "#5a6a8a" } }, "👋 退勤"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(true), style: { ...styles.btn, background: "#8a6ee8" } }, "💬 チャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: openFortune, style: { ...styles.btn, background: "#e85d9e" } }, "🔮 占い"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: doSaisen, style: { ...styles.btn, background: "#b8902e" } }, "⛩️ エ賽銭"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: doNori, style: { ...styles.btn, background: "#2e9e5b" } }, "🌿 ノリ海苔"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setStandby(true), style: { ...styles.btn, background: "#2e7da8", gridColumn: "1 / -1" } }, "📱 待受モード"))), /* @__PURE__ */ React.createElement("p", { style: styles.footnote }, "閉じている間も時間は流れるよ。AI会話：", aiStatus === "ok" ? "オンライン🟢" : aiStatus === "ng" ? "オフライン（自動おしゃべりモード）🟡" : "未確認", /* @__PURE__ */ React.createElement("br", null), "※Claudeの外で開いた共有版は、AIなしでも遊べる自動おしゃべりモードになります")), taikinOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setTaikinOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "👋 退勤させる"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setTaikinOpen(false), style: styles.closeBtn }, "✕ 閉じる")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, lineHeight: 1.8, margin: "0 0 10px" } }, "増やしたなかまに「おつかれさま」を言って退勤してもらえます。最初からいる子は正社員なので退勤できません🐟"), buddyList.length === 0 ? /* @__PURE__ */ React.createElement("p", { style: { textAlign: "center", opacity: 0.6, fontSize: 13, padding: "10px 0" } }, "いま退勤できるなかまはいません") : buddyList.map((inst) => /* @__PURE__ */ React.createElement("div", { key: inst.id, style: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13.5 } }, PERSONAS[inst.kind].emoji, " ", /* @__PURE__ */ React.createElement("b", null, inst.name), "（", PERSONAS[inst.kind].title, "）"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: () => taikin(inst),
+      style: { ...styles.closeBtn, background: "rgba(232,93,93,.25)", border: "1px solid rgba(232,93,93,.6)" }
+    },
+    "退勤"
+  ))))), oracleOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => oracleStep === "result" && setOracleOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "⛩️ カミサマグロの神託"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setOracleOpen(false), style: styles.closeBtn }, "✕ 閉じる")), oracleStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "14px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "kamisama", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.8 } }, "✨ カミサマグロが降臨しています…チャリン… ✨")), oracleStep === "result" && oracleResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "kamisama", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px" } }, "ありがたや…", oracleFallback ? "（オフライン神託である）" : ""), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, lineHeight: 1.9, display: "flex", flexDirection: "column", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "📿 ", /* @__PURE__ */ React.createElement("b", null, "今日やるべきこと"), /* @__PURE__ */ React.createElement("br", null), oracleResult.todo), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "🍚 ", /* @__PURE__ */ React.createElement("b", null, "食べた方がいいもの"), /* @__PURE__ */ React.createElement("br", null), oracleResult.food), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "🍳 ", /* @__PURE__ */ React.createElement("b", null, "調理方法"), /* @__PURE__ */ React.createElement("br", null), oracleResult.recipe), /* @__PURE__ */ React.createElement("div", { style: { background: "linear-gradient(135deg, rgba(255,210,74,.16), rgba(184,144,46,.16))", border: "1px solid rgba(255,210,74,.4)", borderRadius: 10, padding: "8px 12px" } }, "📜 ", /* @__PURE__ */ React.createElement("b", null, "ありがたい格言"), /* @__PURE__ */ React.createElement("br", null), "「", oracleResult.kakugen, "」")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 10 } }, "🐟⚡「", oracleResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: () => setOracleOpen(false),
+      style: { ...styles.btn, background: "#b8902e", width: "100%", marginTop: 8 }
+    },
+    "ありがたく閉じる"
+  )))), noriOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setNoriOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🌿 ノリ海苔の1日プラン"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setNoriOpen(false), style: styles.closeBtn }, "✕ 閉じる")), noriStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "26px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 38 } }, "🌿✨"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.8 } }, "ノリ海苔がノリノリでプランを巻いています…だべ…")), noriStep === "result" && noriResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px" } }, "暇なあなたへ、寝るまでのプランだべ", noriFallback ? "（オフライン版だべ）" : ""), Array.isArray(noriResult.plan) && noriResult.plan.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", gap: 10, marginBottom: 7, background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 11px" } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 12.5, color: "#9be8a8", whiteSpace: "nowrap", paddingTop: 1 } }, p.time), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, lineHeight: 1.65 } }, p.text))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 8 } }, "🌿「", noriResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "aq-btn",
+      onClick: doNori,
+      style: { ...styles.btn, background: "#2e9e5b", width: "100%", marginTop: 8 }
+    },
+    "べつのプランを巻いてもらう"
+  )))), chatOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setChatOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "💬 おさかなチャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(false), style: styles.closeBtn }, "✕ 閉じる")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 } }, KIND_LIST.map((k) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: k,
@@ -1928,12 +2218,12 @@ function AquariumLife3D() {
       style: { ...styles.btn, background: "#e85d9e", marginTop: 14, width: "100%" }
     },
     "とじる"
-  ))), fortuneOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setFortuneOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🔮 にょろ先生のチンアナゴ占い"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setFortuneOpen(false), style: styles.closeBtn }, "✕ 閉じる")), fStep === "zodiac" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, lineHeight: 1.9 } }, "🌊 …こんにちは…にょろ先生です…", /* @__PURE__ */ React.createElement("br", null), "ぼくは", /* @__PURE__ */ React.createElement("b", null, "おとめ座専門"), "の占い師です…", /* @__PURE__ */ React.createElement("br", null), "あなたの星座を教えてください…"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 10 } }, ["おひつじ座", "おうし座", "ふたご座", "かに座", "しし座", "おとめ座", "てんびん座", "さそり座", "いて座", "やぎ座", "みずがめ座", "うお座"].map((z) => /* @__PURE__ */ React.createElement(
+  ))), fortuneOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setFortuneOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🔮 にょろ先生のチンアナゴ占い"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setFortuneOpen(false), style: styles.closeBtn }, "✕ 閉じる")), fStep === "zodiac" && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, lineHeight: 1.9 } }, "🌊 …こんにちは…にょろ先生です…", /* @__PURE__ */ React.createElement("br", null), "ぼくは", /* @__PURE__ */ React.createElement("b", null, "おとめ座専門"), "の占い師です…", /* @__PURE__ */ React.createElement("br", null), "あなたの星座を教えてください…"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 10 } }, ZODIAC.map(([ic, z]) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: z,
       className: "aq-btn",
-      style: styles.modeChip,
+      style: { ...styles.modeChip, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "10px 4px" },
       onClick: () => {
         if (z === "おとめ座") {
           setFStep("q");
@@ -1942,7 +2232,8 @@ function AquariumLife3D() {
         }
       }
     },
-    z
+    /* @__PURE__ */ React.createElement("span", { style: { fontSize: 19, lineHeight: 1 } }, ic),
+    /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10.5 } }, z)
   )))), fStep === "sorry" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", animation: "fadeIn .2s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 36, margin: "8px 0" } }, "🌊💦"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, lineHeight: 2 } }, "ご、ごめんなさい…", /* @__PURE__ */ React.createElement("br", null), "その星座の担当は、いま", /* @__PURE__ */ React.createElement("b", null, "砂の中で修行中"), "でして…びっ…", /* @__PURE__ */ React.createElement("br", null), "ぼくが占えるのは", /* @__PURE__ */ React.createElement("b", null, "おとめ座だけ"), "なんです…"), /* @__PURE__ */ React.createElement(
     "button",
     {
@@ -1974,13 +2265,13 @@ const styles = {
     maxWidth: 560,
     margin: "0 auto",
     padding: "18px 14px 40px",
-    fontFamily: "'Zen Maru Gothic', system-ui, sans-serif",
+    fontFamily: "'M PLUS Rounded 1c', system-ui, sans-serif",
     color: "#eaf6ff",
     minHeight: "100vh",
     background: "linear-gradient(180deg, #06314f 0%, #04263c 100%)"
   },
   header: { textAlign: "center", marginBottom: 12 },
-  title: { fontSize: 24, margin: 0, letterSpacing: 1 },
+  title: { fontSize: 24, margin: 0, letterSpacing: 1.5, fontFamily: "'Mochiy Pop One', 'M PLUS Rounded 1c', sans-serif" },
   subtitle: { fontSize: 12, opacity: 0.75, margin: "4px 0 0" },
   weather: { fontSize: 12, opacity: 0.8, margin: "6px 0 0" },
   welcome: {
@@ -1992,7 +2283,7 @@ const styles = {
     marginBottom: 12,
     cursor: "pointer"
   },
-  tankFrame: { position: "relative", borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,.35)" },
+  tankFrame: { position: "sticky", top: 8, zIndex: 20, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,.45)" },
   effectLayer: { position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" },
   effectText: {
     position: "absolute",
@@ -2076,26 +2367,31 @@ const styles = {
   btn: {
     flex: 1,
     padding: "13px 8px",
-    borderRadius: 12,
+    borderRadius: 14,
     border: "none",
     color: "#fff",
-    fontSize: 14,
-    fontWeight: 700,
+    fontSize: 13.5,
+    fontWeight: 800,
     fontFamily: "inherit",
     cursor: "pointer",
-    boxShadow: "0 3px 10px rgba(0,0,0,.25)"
+    boxShadow: "0 2px 8px rgba(0,0,0,.22)"
   },
   foodBtn: {
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    padding: "9px 10px",
-    borderRadius: 10,
-    border: "1px solid rgba(255,255,255,.15)",
-    background: "rgba(255,255,255,.06)",
+    justifyContent: "center",
+    gap: 4,
+    padding: "10px 2px",
+    borderRadius: 14,
+    minHeight: 62,
+    border: "1px solid rgba(255,255,255,.14)",
+    background: "rgba(255,255,255,.07)",
     color: "#eaf6ff",
     fontFamily: "inherit",
     cursor: "pointer",
-    fontSize: 13
+    fontSize: 12,
+    fontWeight: 700
   },
   closeBtn: {
     padding: "6px 10px",
