@@ -658,6 +658,8 @@ function AquariumLife3D() {
   const [newsText, setNewsText] = useState(makeShrimpNews);
   const [supacha, setSupacha] = useState(null);
   const [soundOn, setSoundOn] = useState(false);
+  const [bubbleVol, setBubbleVol] = useState(0.25);
+  const [danceVol, setDanceVol] = useState(0.4);
   const bubbleAudio = useRef(null);
   const danceAudio = useRef(null);
   const soundOnRef = useRef(false);
@@ -763,12 +765,12 @@ function AquariumLife3D() {
     const pick = ["bubble1.mp3", "bubble2.mp3", "bubble3.mp3"][Math.floor(Math.random() * 3)];
     const b = new Audio(pick);
     b.loop = true;
-    b.volume = 0.45;
+    b.volume = 0.25;
     b.preload = "auto";
     bubbleAudio.current = b;
     const d = new Audio("dance.mp3");
     d.loop = true;
-    d.volume = 0.6;
+    d.volume = 0.4;
     d.preload = "auto";
     danceAudio.current = d;
     return () => {
@@ -787,6 +789,14 @@ function AquariumLife3D() {
       d.pause();
     }
   }, [mode]);
+  const changeBubbleVol = (v) => {
+    setBubbleVol(v);
+    if (bubbleAudio.current) bubbleAudio.current.volume = v;
+  };
+  const changeDanceVol = (v) => {
+    setDanceVol(v);
+    if (danceAudio.current) danceAudio.current.volume = v;
+  };
   const toggleSound = () => {
     const next = !soundOnRef.current;
     soundOnRef.current = next;
@@ -2386,15 +2396,37 @@ function AquariumLife3D() {
         @keyframes noriThink { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
         @keyframes thinkFloat { 0%,100% { transform: translateY(0); opacity: .9; } 50% { transform: translateY(-6px); opacity: .5; } }
         @keyframes thinkDot { 0%,100% { opacity: .2; } 40% { opacity: 1; } }
-      `), !standby && /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…"), /* @__PURE__ */ React.createElement(
+      `), !standby && /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap", marginTop: 6 } }, /* @__PURE__ */ React.createElement("p", { style: { margin: 0, fontSize: 12, opacity: 0.8 } }, "📍", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…"), /* @__PURE__ */ React.createElement(
     "button",
     {
       className: "aq-btn",
       onClick: toggleSound,
       style: { ...styles.soundBtn, ...soundOn ? styles.soundBtnOn : {} }
     },
-    soundOn ? "🔊 サウンドON" : "🔇 サウンドOFF"
-  )), !standby && /* @__PURE__ */ React.createElement("div", { style: styles.newsBar }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "shrimpTalk .16s ease-in-out infinite alternate", fontSize: 18, flex: "0 0 auto" } }, "🦐"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, flex: "0 0 auto" } }, "🎙️"), /* @__PURE__ */ React.createElement("span", { style: styles.newsLabel }, "エビニュース24"), /* @__PURE__ */ React.createElement("span", { key: newsText, style: styles.newsText }, newsText)), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
+    soundOn ? "🔊" : "🔇"
+  ), soundOn && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, opacity: 0.7, whiteSpace: "nowrap" } }, "🫧"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "range",
+      min: 0,
+      max: 1,
+      step: 0.05,
+      value: bubbleVol,
+      onChange: (e) => changeBubbleVol(Number(e.target.value)),
+      style: { width: 60, accentColor: "#5ad1e6" }
+    }
+  ), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, opacity: 0.7, whiteSpace: "nowrap" } }, "🎵"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "range",
+      min: 0,
+      max: 1,
+      step: 0.05,
+      value: danceVol,
+      onChange: (e) => changeDanceVol(Number(e.target.value)),
+      style: { width: 60, accentColor: "#ff8a5c" }
+    }
+  )))), !standby && /* @__PURE__ */ React.createElement("div", { style: styles.newsBar }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "shrimpTalk .16s ease-in-out infinite alternate", fontSize: 18, flex: "0 0 auto" } }, "🦐"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, flex: "0 0 auto" } }, "🎙️"), /* @__PURE__ */ React.createElement("span", { style: styles.newsLabel }, "エビニュース24"), /* @__PURE__ */ React.createElement("span", { key: newsText, style: styles.newsText }, newsText)), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
     "div",
     {
       onClick: cycleClock,
@@ -2579,14 +2611,13 @@ const styles = {
   subtitle: { fontSize: 12, opacity: 0.75, margin: "4px 0 0" },
   weather: { fontSize: 12, opacity: 0.8, margin: "6px 0 0" },
   soundBtn: {
-    marginTop: 8,
-    padding: "6px 14px",
+    padding: "5px 10px",
     borderRadius: 999,
     cursor: "pointer",
     border: "1px solid rgba(255,255,255,.2)",
     background: "rgba(255,255,255,.07)",
     color: "#eaf6ff",
-    fontSize: 11.5,
+    fontSize: 13,
     fontWeight: 700,
     fontFamily: "inherit"
   },
