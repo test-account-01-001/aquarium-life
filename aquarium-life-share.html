@@ -2,8 +2,16 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>アクアリウムライフ 3D 〜カニとクマノミとチンアナゴと ゆかいななかまたち〜</title>
+<link rel="icon" type="image/png" href="icon.png"/>
+<link rel="apple-touch-icon" href="icon.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="アクアリウムライフ"/>
+<meta name="application-name" content="アクアリウムライフ"/>
+<meta name="theme-color" content="#04263c"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -217,6 +225,20 @@ function localFortune(answers, charge) {
     hitokoto: pick(["びっくりしても、また顔を出せば大丈夫です…！", "ゆらゆら、自分のペースでいきましょう…", "今日のあなたは、砂の上に出ていて大丈夫な日です！"], 19)
   };
 }
+function makeShrimpNews() {
+  const pk = (a) => a[Math.floor(Math.random() * a.length)];
+  const cat = Math.floor(Math.random() * 4);
+  if (cat === 0) {
+    return pk(["【天気】", "【速報・天気】"]) + pk(["明日の水槽内", "横浜沖", "サンゴ礁周辺", "砂地エリア", "ろ過フィルター付近"]) + "は" + pk(["おおむね水", "ところにより泡", "プランクトン前線が通過し濃いめの水", "水流強め、ヒレ流され注意", "視界良好、ガラス越しに人類を観測できる", "ヒーター効果で小春日和"]) + pk(["でしょう。", "の見込みです。", "とのことです。", "と気象ガニが発表しました。"]);
+  }
+  if (cat === 1) {
+    return "【政治】" + pk(["カニ議会", "チンアナゴ党", "イソギンチャク連立", "ヤドカリ住宅省", "クラゲ無所属の会", "カツオ高速交通委員会"]) + "、" + pk(["エサ増量法案を可決", "砂利の再配分を巡り紛糾", "水換え税の導入を断念", "脱皮休暇の義務化を検討", "泡の発生量に上限を設ける案を提出", "「みんなえらい」決議を全会一致で採択"]) + pk(["。", "。審議は明日も続きます。", "。野党のカニは「異議なし」とハサミを上げました。"]);
+  }
+  if (cat === 2) {
+    return "【グルメ】" + pk(["いま話題の", "行列のできる", "通しか知らない", "深夜にしか開かない", "ミシュラン未掲載の"]) + pk(["プランクトン専門店", "アサリバル", "フレーク食べ放題の店", "二郎系（水槽店）", "タニタ食堂・海底支店", "高級ブラインシュリンプ亭"]) + "、" + pk(["本日も大盛況です。", "予約は3潮先まで埋まっています。", "店主はカニです。", "看板メニューは結局フレークです。", "口コミ評価は泡4.8です。"]);
+  }
+  return "【社会】" + pk(["本日未明、", "けさ、", "先ほど、", "現地時間さきほど、"]) + pk(["チンアナゴが全員同時に引っ込む現象が発生", "泡が例年より丸いと話題に", "ヤドカリの引っ越し渋滞が発生", "カツオが自己ベストを更新（水槽3周）", "イソギンチャクがわずかに動いたとの目撃情報", "謎の金貨が賽銭箱に落下", "ノリ海苔が新しいプランを発表"]) + pk(["。原因は不明です。", "。専門家は「かわいい」とコメントしています。", "。現場からは以上です。", "。続報が入り次第お伝えします。", "。けが人はいません。"]);
+}
 const CLOCK_ORDER = ["pill", "neon", "retro", "cute"];
 const CLOCK_NAMES = { pill: "シンプル", neon: "ネオン", retro: "レトロ", cute: "キュート" };
 const CLOCK_VARIANTS = {
@@ -227,51 +249,30 @@ const CLOCK_VARIANTS = {
 };
 const ZODIAC = [["♈", "おひつじ座"], ["♉", "おうし座"], ["♊", "ふたご座"], ["♋", "かに座"], ["♌", "しし座"], ["♍", "おとめ座"], ["♎", "てんびん座"], ["♏", "さそり座"], ["♐", "いて座"], ["♑", "やぎ座"], ["♒", "みずがめ座"], ["♓", "うお座"]];
 function localOracle() {
-  const h = hashStr((/* @__PURE__ */ new Date()).toDateString() + "oracle" + Math.floor(Math.random() * 5));
-  const pick = (arr, k) => arr[(h >> k) % arr.length];
+  const pk = (arr) => arr[Math.floor(Math.random() * arr.length)];
   return {
-    todo: pick(["机の上をひとつだけ片付けるのじゃ。運気の通り道ができる。", "10分早く寝る準備を始めるのである。", "誰かに「ありがとう」を一回多く言うのじゃ。", "深呼吸を3回。それだけで今日は勝ちである。"], 2),
-    food: pick(["納豆ごはん（マグロは食べてはならぬ）", "あたたかいうどん", "焼きおにぎり", "バナナと牛乳"], 5),
-    recipe: pick(["火を使わず、ただ感謝して食すのじゃ。", "醤油を「ありがたや」と唱えながら一周かけよ。", "弱火でじっくり。急いては事を仕損じるのである。", "海苔で巻くのじゃ。すべては巻けば解決する。"], 8),
-    kakugen: pick(["泳がぬマグロも、流れの一部である。", "賽銭の音は、心の音。チャリン。", "迷ったら、砂に潜るが良い。", "回らぬ寿司より、回る心。", "水槽の外もまた、水槽である。"], 11),
-    hitokoto: pick(["今日もよくお参りした。励めよ。", "そなたの水質、悪くないぞ。", "また来るがよい。チャリンを忘れずにな。"], 14)
+    todo: pk(["机の上をひとつだけ片付けるのじゃ。運気の通り道ができる。", "10分早く寝る準備を始めるのである。", "誰かに「ありがとう」を一回多く言うのじゃ。", "深呼吸を3回。それだけで今日は勝ちである。", "スマホの写真を3枚だけ消すのじゃ。心も軽くなる。", "水を一杯飲め。話はそれからである。", "靴を揃えるのじゃ。揃えた者から運が入ってくる。", "今日は「まあいっか」を口癖にするのである。", "窓を開けて空気を入れ替えよ。神も入りやすくなる。", "歩幅をいつもより少しだけ大きくするのじゃ。"]),
+    food: pk(["納豆ごはん（マグロは食べてはならぬ）", "あたたかいうどん", "焼きおにぎり", "バナナと牛乳", "味噌汁。具はわかめ（海の仲間に感謝せよ）", "卵焼き。甘めが吉である", "りんご。丸かじりが望ましい", "おでんの大根", "ほうじ茶と団子", "カレー（辛さは中辛までと心得よ）"]),
+    recipe: pk(["火を使わず、ただ感謝して食すのじゃ。", "醤油を「ありがたや」と唱えながら一周かけよ。", "弱火でじっくり。急いては事を仕損じるのである。", "海苔で巻くのじゃ。すべては巻けば解決する。", "レンジで2分。その待ち時間に深呼吸をするのである。", "切って盛るだけでよい。盛り付けに心を込めよ。", "一口目は目を閉じて食すのじゃ。", "だしを取れ。面倒なら顆粒でも神は許す。", "少し冷ましてから食べよ。猫舌の神もおるでな。"]),
+    kakugen: pk(["泳がぬマグロも、流れの一部である。", "賽銭の音は、心の音。チャリン。", "迷ったら、砂に潜るが良い。", "回らぬ寿司より、回る心。", "水槽の外もまた、水槽である。", "ヒレで掴めぬものは、心で掴め。", "満腹は最強の精神安定剤である。", "泡は上にしか昇らぬ。お前もそうであれ。", "脱皮なくして成長なし。ただし脱ぎっぱなしはだめ。", "エサは待つ者にも降るが、泳ぐ者には先に降る。", "ガラスにぶつかってからが本番である。", "深く考えるな。ここは水深60センチである。"]),
+    hitokoto: pk(["今日もよくお参りした。励めよ。", "そなたの水質、悪くないぞ。", "また来るがよい。チャリンを忘れずにな。", "良い潮が来ておる。乗るのじゃ。", "無理はするな。マグロでも休む（止まらんがな）。", "そなたの今日に、大漁旗を立てておいたぞ。"])
   };
 }
 function localNoriPlan() {
-  const r = Math.floor(Math.random() * 3);
-  const plans = [
-    [
-      { time: "朝8時", text: "起床。まず窓を開けて「海じゃん」と言う（海じゃなくても）" },
-      { time: "朝9時", text: "朝ごはんは納豆トースト。意外とアリだべ" },
-      { time: "昼12時", text: "近所でいちばん安いラーメンを真顔で食べる" },
-      { time: "昼14時", text: "公園のハトに敬語で話しかける" },
-      { time: "夕方17時", text: "スーパーで半額シールが貼られる瞬間に立ち会う" },
-      { time: "夜19時", text: "晩ごはんは鍋。具は冷蔵庫と相談だべ" },
-      { time: "夜21時", text: "風呂で今日のMVP（自分）を発表する" },
-      { time: "夜23時", text: "寝る。海苔は乾燥が大事。人は睡眠が大事だべ" }
-    ],
-    [
-      { time: "朝9時", text: "起床。布団を3秒だけ畳むフリをする" },
-      { time: "朝10時", text: "喫茶店でモーニング。トーストの厚さに敬意を払う" },
-      { time: "昼13時", text: "浅草を散歩。Switchの転売はしない（しないことに意味がある）" },
-      { time: "昼15時", text: "おやつにメロンパン。外側だけ先に食べる派に転向する" },
-      { time: "夕方18時", text: "電器屋で4Kテレビの前に立ち、何も買わずに帰る" },
-      { time: "夜20時", text: "晩ごはんは手巻き寿司。海苔（おれ）の出番だべ！" },
-      { time: "夜22時", text: "ストレッチしながら明日の言い訳を考える" },
-      { time: "夜24時", text: "寝る。夢の中でも巻いていけだべ" }
-    ],
-    [
-      { time: "朝7時", text: "早起きして勝った気分になる（実際勝ち）" },
-      { time: "朝8時", text: "卵かけごはん。醤油は時計回りにかけるべ" },
-      { time: "昼11時", text: "図書館で一番分厚い本を持ち上げ、満足して帰る" },
-      { time: "昼13時", text: "昼はカレー。福神漬けの正しい位置について考える" },
-      { time: "昼15時", text: "川を見に行く。流れに「わかるよ」と言う" },
-      { time: "夜18時", text: "餃子を焼く。羽根つきに挑戦して羽根だけ成功させる" },
-      { time: "夜21時", text: "明日のTODOを書いて、今日の分は見なかったことにする" },
-      { time: "夜23時", text: "寝るべ。おやすみ、いい乾燥を" }
-    ]
+  const pk = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const title = pk(["完全燃焼ノリノリプラン", "省エネだらだら極楽プラン", "近所で世界一周プラン", "音速グルメ巡礼プラン", "無の境地マスタープラン", "海苔的・文化人プラン", "気合いの早起き優勝プラン", "夜型リズム反転プラン", "パリパリ全力休日プラン", "しっとり大人の余裕プラン"]);
+  const plan = [
+    { time: "朝" + pk(["7", "8", "9"]) + "時", text: pk(["起床。窓を開けて「海じゃん」と言う（海じゃなくても）", "起床。布団を3秒だけ畳むフリをする", "起床。カーテンを開けて太陽と目を合わせて会釈する", "早起きして勝った気分になる（実際勝ち）", "二度寝を1回だけ許可する。それが大人だべ"]) },
+    { time: "朝" + pk(["9", "10"]) + "時", text: pk(["朝ごはんは納豆トースト。意外とアリだべ", "卵かけごはん。醤油は時計回りにかけるべ", "喫茶店でモーニング。トーストの厚さに敬意を払う", "ヨーグルトに何を混ぜるかで本日の運勢を占う", "おにぎりを三角に握れたら今日は勝ちだべ"]) },
+    { time: "昼11時", text: pk(["図書館で一番分厚い本を持ち上げて満足して帰る", "公園のハトに敬語で話しかける", "浅草を散歩。Switchの転売はしない（しないことに意味がある）", "電車で一駅だけ旅に出る。帰りは徒歩で冒険だべ", "ホームセンターで工具を眺めて職人の顔をする", "川を見に行く。流れに「わかるよ」と言う"]) },
+    { time: "昼13時", text: pk(["昼は近所でいちばん安いラーメンを真顔で食べる", "昼はカレー。福神漬けの正しい位置について考える", "コンビニ新商品をジャケ買いして審査員になる", "立ち食いそば。つゆを飲む量で人生を決める", "お弁当を公園で食べる。ハトとの距離感を学ぶ"]) },
+    { time: "昼15時", text: pk(["おやつにメロンパン。外側だけ先に食べる派に転向する", "スーパーで半額シールが貼られる瞬間に立ち会う", "電器屋で4Kテレビの前に立ち、何も買わずに帰る", "本屋で平積みの一番上だけ全部読む（タイトルを）", "昼寝20分。プロの昼寝を見せるべ", "ベランダで雲に名前をつける"]) },
+    { time: "夕方17時", text: pk(["銭湯か長風呂。肩まで浸かって10数えるべ", "夕焼けに「今日もよくやった」と先に言っておく", "スーパーの試食コーナーを2周する（ちゃんと買う）", "帰り道をちょっとだけ遠回りして探検する"]) },
+    { time: "夜19時", text: pk(["晩ごはんは鍋。具は冷蔵庫と相談だべ", "晩ごはんは手巻き寿司。海苔（おれ）の出番だべ！", "餃子を焼く。羽根つきに挑戦して羽根だけ成功させる", "カレーを仕込む。二日目という発明を明日味わうべ", "TKGアレンジ選手権を一人で開催する"]) },
+    { time: "夜21時", text: pk(["風呂で今日のMVP（自分）を発表する", "ストレッチしながら明日の言い訳を考える", "明日のTODOを書いて、今日の分は見なかったことにする", "推しの動画を1本だけ見る（という強い意志）", "部屋の電気を一段暗くして大人の雰囲気を出す"]) },
+    { time: "夜23時", text: pk(["寝る。海苔は乾燥が大事。人は睡眠が大事だべ", "寝るべ。おやすみ、いい乾燥を", "布団に感謝してから寝る。快眠確定だべ", "寝る。夢の中でも巻いていけだべ"]) }
   ];
-  return { plan: plans[r], hitokoto: ["今日も巻いていくべ！", "ノリで生きていいんだべ", "プランは破ってもOK。それもノリだべ"][r] };
+  return { title, plan, hitokoto: pk(["今日も巻いていくべ！", "ノリで生きていいんだべ", "プランは破ってもOK。それもノリだべ", "完璧じゃなくていい、パリッとしてれば十分だべ", "休むのも立派な仕事だべ", "明日の自分に任せる勇気、大事だべ"]) };
 }
 function creatureMood(kind, seed, s) {
   const h = hashStr((/* @__PURE__ */ new Date()).toDateString() + kind + seed);
@@ -394,6 +395,24 @@ function buildAvatarModel(type) {
     mouth.scale.set(0.7, 0.45, 0.6);
     group.add(mouth);
     group.position.y = 0.35;
+  } else if (type === "nori") {
+    const nm = new THREE.MeshStandardMaterial({ color: 1919530, roughness: 0.7, side: THREE.DoubleSide });
+    const sheet = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.2, 0.06), nm);
+    sheet.position.y = 0.45;
+    group.add(sheet);
+    [-0.18, 0.18].forEach((x) => {
+      const ew = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshBasicMaterial({ color: 16777215 }));
+      ew.position.set(x, 0.62, 0.07);
+      group.add(ew);
+      const ep = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), dark);
+      ep.position.set(x, 0.62, 0.13);
+      group.add(ep);
+    });
+    mouth = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), dark);
+    mouth.position.set(0, 0.36, 0.07);
+    mouth.scale.set(1.1, 0.5, 0.5);
+    group.add(mouth);
+    group.position.y = 0.05;
   } else if (type === "kamisama") {
     const top = new THREE.MeshStandardMaterial({ color: 1915502, roughness: 0.35, metalness: 0.45 });
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 22, 14), top);
@@ -627,6 +646,7 @@ function AquariumLife3D() {
   const [noriStep, setNoriStep] = useState("loading");
   const [noriResult, setNoriResult] = useState(null);
   const [noriFallback, setNoriFallback] = useState(false);
+  const [newsText, setNewsText] = useState(makeShrimpNews);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatTarget, setChatTarget] = useState("fish");
   const [chats, setChats] = useState({ fish: [], katsuo: [], eel: [], crab: [], jelly: [], hermit: [], anemone: [] });
@@ -721,6 +741,10 @@ function AquariumLife3D() {
       else setWeather({ err: true });
     }).catch(() => setWeather({ err: true }));
   }, []);
+  useEffect(() => {
+    const id = setInterval(() => setNewsText(makeShrimpNews()), 6e3);
+    return () => clearInterval(id);
+  }, []);
   useEffect(() => () => {
     rushTimers.current.forEach(clearTimeout);
   }, []);
@@ -787,6 +811,101 @@ function AquariumLife3D() {
     const backWall = new THREE.Mesh(new THREE.PlaneGeometry(12.4, 7.2), new THREE.MeshBasicMaterial({ color: 4168908 }));
     backWall.position.set(0, 3.5, -3.05);
     scene.add(backWall);
+    const bgGroup = new THREE.Group();
+    const rayCanvas = document.createElement("canvas");
+    rayCanvas.width = 32;
+    rayCanvas.height = 256;
+    const rctx = rayCanvas.getContext("2d");
+    const rgrad = rctx.createLinearGradient(0, 0, 0, 256);
+    rgrad.addColorStop(0, "rgba(255,255,255,0.95)");
+    rgrad.addColorStop(0.45, "rgba(255,255,255,0.35)");
+    rgrad.addColorStop(1, "rgba(255,255,255,0)");
+    rctx.fillStyle = rgrad;
+    rctx.fillRect(0, 0, 32, 256);
+    const rayTex = new THREE.CanvasTexture(rayCanvas);
+    const bgRays = [];
+    for (let i = 0; i < 5; i++) {
+      const rm = new THREE.MeshBasicMaterial({ map: rayTex, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending });
+      const ray2 = new THREE.Mesh(new THREE.PlaneGeometry(0.6 + i * 0.18, 7.6), rm);
+      ray2.position.set(-4.4 + i * 2.1, 3.6, -2.93);
+      ray2.rotation.z = -0.16 - i * 0.02;
+      ray2.userData = { ph: i * 1.5, baseX: -4.4 + i * 2.1 };
+      bgRays.push(ray2);
+      bgGroup.add(ray2);
+    }
+    const bgSilhs = [];
+    const makeSil = (type) => {
+      const m = new THREE.MeshBasicMaterial({ color: 1920622, transparent: true, opacity: 0.5 });
+      const g2 = new THREE.Group();
+      if (type === "fish") {
+        const bd = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), m);
+        bd.scale.set(1.9, 0.8, 0.4);
+        const tl = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 4), m);
+        tl.rotation.z = Math.PI / 2;
+        tl.scale.z = 0.3;
+        tl.position.x = -0.32;
+        g2.add(bd, tl);
+      } else if (type === "long") {
+        const bd = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), m);
+        bd.scale.set(3.6, 0.5, 0.35);
+        const tl = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 4), m);
+        tl.rotation.z = Math.PI / 2;
+        tl.scale.z = 0.3;
+        tl.position.x = -0.48;
+        g2.add(bd, tl);
+      } else if (type === "ray") {
+        const bd = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), m);
+        bd.scale.set(1.6, 0.28, 1.1);
+        const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.03, 0.5, 4), m);
+        tail.rotation.z = Math.PI / 2;
+        tail.position.x = -0.5;
+        g2.add(bd, tail);
+      } else {
+        for (let k = 0; k < 5; k++) {
+          const f2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), m);
+          f2.scale.set(1.8, 0.7, 0.4);
+          f2.position.set(rand(-0.35, 0.35), rand(-0.25, 0.25), 0);
+          g2.add(f2);
+        }
+      }
+      return g2;
+    };
+    ["fish", "fish", "long", "ray", "school", "school", "fish", "long", "ray", "school"].forEach((tp) => {
+      const g2 = makeSil(tp);
+      const sdr = Math.random() < 0.5 ? 1 : -1;
+      g2.position.set(rand(-5.5, 5.5), rand(2, 5.8), -2.8);
+      if (sdr < 0) g2.rotation.y = Math.PI;
+      const sc = rand(0.55, 1.25);
+      g2.scale.setScalar(sc);
+      g2.userData = { speed: rand(0.2, 0.75) * sdr * (tp === "ray" ? 0.55 : 1), baseY: g2.position.y, ph: rand(0, 6), flap: tp === "ray", baseSc: sc };
+      bgSilhs.push(g2);
+      bgGroup.add(g2);
+    });
+    const bgWeeds = [];
+    const weedCols = [3045966, 3836506, 2452036, 4889186, 2783850];
+    for (let i = 0; i < 12; i++) {
+      const wm = new THREE.MeshStandardMaterial({ color: weedCols[i % weedCols.length], roughness: 0.85 });
+      const h2 = rand(1, 2.8);
+      const wgGeo = new THREE.CylinderGeometry(0.04, 0.09, h2, 6);
+      wgGeo.translate(0, h2 / 2, 0);
+      const weed = new THREE.Mesh(wgGeo, wm);
+      weed.position.set(rand(-5.7, 5.7), 0, rand(-2.88, -2.45));
+      weed.userData = { ph: rand(0, 6), amp: rand(0.12, 0.34) };
+      bgWeeds.push(weed);
+      bgGroup.add(weed);
+    }
+    const bgMotes = [];
+    const moteMat = new THREE.MeshBasicMaterial({ color: 13626111, transparent: true, opacity: 0.32 });
+    for (let i = 0; i < 30; i++) {
+      const mo = new THREE.Mesh(new THREE.SphereGeometry(rand(0.02, 0.055), 5, 5), moteMat);
+      mo.position.set(rand(-5.8, 5.8), rand(0.5, 6.6), rand(-2.9, -2.3));
+      mo.userData = { vy: rand(0.05, 0.18), ph: rand(0, 6) };
+      bgMotes.push(mo);
+      bgGroup.add(mo);
+    }
+    scene.add(bgGroup);
+    W.bg = { rays: bgRays, silhs: bgSilhs, weeds: bgWeeds, motes: bgMotes };
+    W.bg = { rays: bgRays, silhs: bgSilhs, weeds: bgWeeds, motes: bgMotes };
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(12.2, 7.1, 6.2)),
       new THREE.LineBasicMaterial({ color: 12577023, transparent: true, opacity: 0.45 })
@@ -1772,11 +1891,53 @@ function AquariumLife3D() {
           }
         }
       }
+      if (W.bg) {
+        const stormy = mk === "storm";
+        const rayOp = mk === "hidamari" ? 0.2 : mk === "night" ? 0.05 : mk === "fever" ? 0.14 : mk === "dance" ? 0.1 : 0.07;
+        W.bg.rays.forEach((rm2) => {
+          rm2.material.opacity = rayOp * (0.65 + 0.35 * Math.sin(t * 0.5 + rm2.userData.ph));
+          rm2.position.x = rm2.userData.baseX + Math.sin(t * 0.16 + rm2.userData.ph) * 0.55;
+          rm2.scale.x = 1 + Math.sin(t * 0.4 + rm2.userData.ph) * 0.22;
+        });
+        W.bg.silhs.forEach((sg) => {
+          sg.position.x += sg.userData.speed * (stormy ? 2.6 : 1) * dt;
+          sg.position.y = sg.userData.baseY + Math.sin(t * 1.2 + sg.userData.ph) * 0.18;
+          if (sg.userData.flap) sg.scale.y = sg.userData.baseSc * (1 + Math.sin(t * 3 + sg.userData.ph) * 0.28);
+          if (sg.position.x > 6.4) sg.position.x = -6.4;
+          if (sg.position.x < -6.4) sg.position.x = 6.4;
+        });
+        W.bg.weeds.forEach((wd) => {
+          wd.rotation.z = Math.sin(t * (stormy ? 6 : 1.1) + wd.userData.ph) * wd.userData.amp * (stormy ? 2.2 : 1);
+        });
+        W.bg.motes.forEach((mo) => {
+          mo.position.y += mo.userData.vy * dt;
+          mo.position.x += Math.sin(t * 0.7 + mo.userData.ph) * 0.07 * dt;
+          if (mo.position.y > 6.8) mo.position.y = 0.4;
+        });
+      }
       if (W.nori) {
-        W.nori.position.x = 3.1 + Math.sin(t * 0.35) * 1.4;
-        W.nori.position.y = 3.4 + Math.sin(t * 1.1) * 0.5;
-        W.nori.rotation.z = Math.sin(t * 1.7) * 0.25;
-        W.nori.rotation.y = Math.sin(t * 0.6) * 0.6;
+        if (mk === "storm") {
+          const na = t * 2.7 + 1.7;
+          W.nori.position.set(Math.cos(na) * 3.4, 3.1 + Math.sin(na * 1.3 + 2) * 1.7, Math.sin(na) * 1.45);
+          W.nori.rotation.x += dt * 7;
+          W.nori.rotation.z += dt * 5;
+        } else if (mk === "dance") {
+          const nbp = t * 2.1333 * Math.PI;
+          const nb = Math.abs(Math.sin(nbp));
+          W.nori.position.x = 3.1 + Math.sin(t * 0.35) * 1.4;
+          W.nori.position.y = 2.7 + nb * 1.3;
+          W.nori.position.z = 0.4;
+          W.nori.rotation.y += dt * 10;
+          W.nori.rotation.z = Math.sin(nbp * 2) * 0.6;
+          W.nori.rotation.x *= Math.max(0, 1 - dt * 5);
+        } else {
+          W.nori.rotation.x *= Math.max(0, 1 - dt * 5);
+          W.nori.position.x = 3.1 + Math.sin(t * 0.35) * 1.4;
+          W.nori.position.y = 3.4 + Math.sin(t * 1.1) * 0.5;
+          W.nori.position.z = 0.4;
+          W.nori.rotation.z = Math.sin(t * 1.7) * 0.25;
+          W.nori.rotation.y = Math.sin(t * 0.6) * 0.6;
+        }
       }
       if (W.coins.length) {
         for (const c of W.coins) {
@@ -1884,32 +2045,36 @@ function AquariumLife3D() {
     oracleBusy.current = true;
     W.spawnCoin();
     effectCenter("⛩️ エ賽銭、投入…");
-    setTimeout(async () => {
-      setOracleOpen(true);
-      setOracleStep("loading");
-      setOracleFallback(false);
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
-      const prompt = "あなたは水槽にまつられている神様のマグロ「カミサマグロ」。参拝者がエ賽銭（特別なエサのお賽銭）を賽銭箱に投じた。荘厳だが少しゆるい神様口調（「〜である」「〜じゃ」）で、今日(" + today + ')の神託を授けよ。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"todo":"今日やるべきこと1〜2文","food":"今日食べた方がいいもの","recipe":"その調理方法（ゆるくてよい）1〜2文","kakugen":"ありがたい格言。意味不明でも可。1文","hitokoto":"締めの神様の一言"}';
+    const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+    const prompt = "あなたは水槽にまつられている神様のマグロ「カミサマグロ」。参拝者がエ賽銭（特別なエサのお賽銭）を賽銭箱に投じた。荘厳だが少しゆるい神様口調（「〜である」「〜じゃ」）で、今日(" + today + ')の神託を授けよ。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"todo":"今日やるべきこと1〜2文","food":"今日食べた方がいいもの","recipe":"その調理方法（ゆるくてよい）1〜2文","kakugen":"ありがたい格言。意味不明でも可。1文","hitokoto":"締めの神様の一言"}';
+    const fetchP = (async () => {
       try {
         const raw = await callClaude([{ role: "user", content: prompt }]);
-        setOracleResult(JSON.parse(raw.replace(/```json|```/g, "").trim()));
-        setAiStatus("ok");
+        return { res: JSON.parse(raw.replace(/```json|```/g, "").trim()), fb: false };
       } catch (e) {
-        setOracleResult(localOracle());
-        setOracleFallback(true);
-        setAiStatus("ng");
+        return { res: localOracle(), fb: true };
       }
-      setOracleStep("result");
-      talkingRef.current = Date.now() + 4500;
-      oracleBusy.current = false;
-    }, 2200);
+    })();
+    setTimeout(() => {
+      setOracleOpen(true);
+      setOracleStep("kourin");
+      setOracleFallback(false);
+      Promise.all([fetchP, new Promise((r) => setTimeout(r, 2400))]).then(([o]) => {
+        setOracleResult(o.res);
+        setOracleFallback(o.fb);
+        setAiStatus(o.fb ? "ng" : "ok");
+        setOracleStep("result");
+        talkingRef.current = Date.now() + 4500;
+        oracleBusy.current = false;
+      });
+    }, 2700);
   };
   const doNori = async () => {
     setNoriOpen(true);
     setNoriStep("loading");
     setNoriFallback(false);
     const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
-    const prompt = "あなたは水槽にただよう、ノリがいい海苔のキャラ「ノリ海苔」。ハイテンションで語尾は「〜だべ」。暇な人のために今日(" + today + ')の起床から就寝までの1日プランをタイムスケジュール形式で提案する。食事の提案も必ず入れる。シュールでクスッと笑える提案を大歓迎（例: 公園のハトに敬語で話しかける、電器屋で4Kテレビを見るだけ見て帰る）。ただし違法行為・迷惑行為は提案しない。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"plan":[{"time":"朝8時","text":"やること"}を7〜9項目、寝るまで],"hitokoto":"締めのノリのいい一言"}';
+    const prompt = "あなたは水槽にただよう、ノリがいい海苔のキャラ「ノリ海苔」。ハイテンションで語尾は「〜だべ」。暇な人のために今日(" + today + ')の起床から就寝までの1日プランをタイムスケジュール形式で提案する。食事の提案も必ず入れる。シュールでクスッと笑える提案を大歓迎（例: 公園のハトに敬語で話しかける、電器屋で4Kテレビを見るだけ見て帰る）。ただし違法行為・迷惑行為は提案しない。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"title":"プラン名（キャッチーで面白く）","plan":[{"time":"朝8時","text":"やること"}を7〜9項目、寝るまで],"hitokoto":"締めのノリのいい一言"}';
     try {
       const raw = await callClaude([{ role: "user", content: prompt }]);
       setNoriResult(JSON.parse(raw.replace(/```json|```/g, "").trim()));
@@ -1920,6 +2085,7 @@ function AquariumLife3D() {
       setAiStatus("ng");
     }
     setNoriStep("result");
+    talkingRef.current = Date.now() + 4e3;
   };
   const exitObserve = () => {
     observeRef.current = null;
@@ -2090,7 +2256,9 @@ function AquariumLife3D() {
         @keyframes floatUp { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -36px); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes rushPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
-      `), !standby && /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…")), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
+        @keyframes shrimpTalk { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-1.5px) rotate(4deg); } }
+        @keyframes rayspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `), !standby && /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…")), !standby && /* @__PURE__ */ React.createElement("div", { style: styles.newsBar }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "shrimpTalk .16s ease-in-out infinite alternate", fontSize: 18, flex: "0 0 auto" } }, "🦐"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, flex: "0 0 auto" } }, "🎙️"), /* @__PURE__ */ React.createElement("span", { style: styles.newsLabel }, "エビニュース24"), /* @__PURE__ */ React.createElement("span", { key: newsText, style: styles.newsText }, newsText)), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
     "div",
     {
       onClick: cycleClock,
@@ -2163,7 +2331,7 @@ function AquariumLife3D() {
       style: { ...styles.closeBtn, background: "rgba(232,93,93,.25)", border: "1px solid rgba(232,93,93,.6)" }
     },
     "退勤"
-  ))))), oracleOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => oracleStep === "result" && setOracleOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "⛩️ カミサマグロの神託"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setOracleOpen(false), style: styles.closeBtn }, "✕ 閉じる")), oracleStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "14px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "kamisama", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.8 } }, "✨ カミサマグロが降臨しています…チャリン… ✨")), oracleStep === "result" && oracleResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "kamisama", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px" } }, "ありがたや…", oracleFallback ? "（オフライン神託である）" : ""), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, lineHeight: 1.9, display: "flex", flexDirection: "column", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "📿 ", /* @__PURE__ */ React.createElement("b", null, "今日やるべきこと"), /* @__PURE__ */ React.createElement("br", null), oracleResult.todo), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "🍚 ", /* @__PURE__ */ React.createElement("b", null, "食べた方がいいもの"), /* @__PURE__ */ React.createElement("br", null), oracleResult.food), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "🍳 ", /* @__PURE__ */ React.createElement("b", null, "調理方法"), /* @__PURE__ */ React.createElement("br", null), oracleResult.recipe), /* @__PURE__ */ React.createElement("div", { style: { background: "linear-gradient(135deg, rgba(255,210,74,.16), rgba(184,144,46,.16))", border: "1px solid rgba(255,210,74,.4)", borderRadius: 10, padding: "8px 12px" } }, "📜 ", /* @__PURE__ */ React.createElement("b", null, "ありがたい格言"), /* @__PURE__ */ React.createElement("br", null), "「", oracleResult.kakugen, "」")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 10 } }, "🐟⚡「", oracleResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
+  ))))), oracleOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => oracleStep === "result" && setOracleOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "⛩️ カミサマグロの神託"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setOracleOpen(false), style: styles.closeBtn }, "✕ 閉じる")), oracleStep === "kourin" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "10px 0 16px", position: "relative", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", left: "50%", top: 70, width: 300, height: 300, marginLeft: -150, marginTop: -150, pointerEvents: "none" } }, /* @__PURE__ */ React.createElement("div", { style: { width: "100%", height: "100%", borderRadius: "50%", background: "repeating-conic-gradient(rgba(255,210,74,.32) 0deg 10deg, rgba(255,210,74,0) 10deg 26deg)", animation: "rayspin 7s linear infinite" } })), /* @__PURE__ */ React.createElement("div", { style: { position: "relative", display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "kamisama", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { position: "relative", fontSize: 13.5, fontWeight: 800, margin: "6px 0 0" } }, "✨ カミサマグロ、天の光とともに降臨 ✨")), oracleStep === "result" && oracleResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "kamisama", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px" } }, "ありがたや…", oracleFallback ? "（オフライン神託である）" : ""), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, lineHeight: 1.9, display: "flex", flexDirection: "column", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "📿 ", /* @__PURE__ */ React.createElement("b", null, "今日やるべきこと"), /* @__PURE__ */ React.createElement("br", null), oracleResult.todo), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "🍚 ", /* @__PURE__ */ React.createElement("b", null, "食べた方がいいもの"), /* @__PURE__ */ React.createElement("br", null), oracleResult.food), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 12px" } }, "🍳 ", /* @__PURE__ */ React.createElement("b", null, "調理方法"), /* @__PURE__ */ React.createElement("br", null), oracleResult.recipe), /* @__PURE__ */ React.createElement("div", { style: { background: "linear-gradient(135deg, rgba(255,210,74,.16), rgba(184,144,46,.16))", border: "1px solid rgba(255,210,74,.4)", borderRadius: 10, padding: "8px 12px" } }, "📜 ", /* @__PURE__ */ React.createElement("b", null, "ありがたい格言"), /* @__PURE__ */ React.createElement("br", null), "「", oracleResult.kakugen, "」")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 10 } }, "🐟⚡「", oracleResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
     "button",
     {
       className: "aq-btn",
@@ -2171,7 +2339,7 @@ function AquariumLife3D() {
       style: { ...styles.btn, background: "#b8902e", width: "100%", marginTop: 8 }
     },
     "ありがたく閉じる"
-  )))), noriOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setNoriOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🌿 ノリ海苔の1日プラン"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setNoriOpen(false), style: styles.closeBtn }, "✕ 閉じる")), noriStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "26px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 38 } }, "🌿✨"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.8 } }, "ノリ海苔がノリノリでプランを巻いています…だべ…")), noriStep === "result" && noriResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px" } }, "暇なあなたへ、寝るまでのプランだべ", noriFallback ? "（オフライン版だべ）" : ""), Array.isArray(noriResult.plan) && noriResult.plan.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", gap: 10, marginBottom: 7, background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 11px" } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 12.5, color: "#9be8a8", whiteSpace: "nowrap", paddingTop: 1 } }, p.time), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, lineHeight: 1.65 } }, p.text))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 8 } }, "🌿「", noriResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
+  )))), noriOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setNoriOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🌿 ノリ海苔の1日プラン"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setNoriOpen(false), style: styles.closeBtn }, "✕ 閉じる")), noriStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "14px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "nori", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.8 } }, "ノリ海苔がノリノリでプランを巻いています…だべ…")), noriStep === "result" && noriResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 2 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "nori", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { textAlign: "center", fontSize: 15, fontWeight: 800, margin: "0 0 4px" } }, "📋 ", noriResult.title || "本日のプラン"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px", textAlign: "center" } }, "暇なあなたへ、寝るまでのプランだべ", noriFallback ? "（オフライン版だべ）" : ""), Array.isArray(noriResult.plan) && noriResult.plan.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", gap: 10, marginBottom: 7, background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 11px" } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 12.5, color: "#9be8a8", whiteSpace: "nowrap", paddingTop: 1 } }, p.time), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, lineHeight: 1.65 } }, p.text))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 8 } }, "🌿「", noriResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
     "button",
     {
       className: "aq-btn",
@@ -2274,6 +2442,26 @@ const styles = {
   title: { fontSize: 24, margin: 0, letterSpacing: 1.5, fontFamily: "'Mochiy Pop One', 'M PLUS Rounded 1c', sans-serif" },
   subtitle: { fontSize: 12, opacity: 0.75, margin: "4px 0 0" },
   weather: { fontSize: 12, opacity: 0.8, margin: "6px 0 0" },
+  newsBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    background: "rgba(0,0,0,.3)",
+    borderRadius: 10,
+    padding: "7px 10px",
+    margin: "0 0 12px",
+    overflow: "hidden"
+  },
+  newsLabel: {
+    fontSize: 10,
+    fontWeight: 800,
+    color: "#ff9a9a",
+    whiteSpace: "nowrap",
+    borderRight: "1px solid rgba(255,255,255,.25)",
+    paddingRight: 6,
+    flex: "0 0 auto"
+  },
+  newsText: { fontSize: 11.5, lineHeight: 1.5, flex: 1, animation: "fadeIn .4s ease" },
   welcome: {
     background: "rgba(255, 210, 74, .15)",
     border: "1px solid rgba(255,210,74,.5)",
