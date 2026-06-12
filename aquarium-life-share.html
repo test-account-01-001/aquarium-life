@@ -43,6 +43,7 @@ const MODES = {
   storm: { label: "⛈️ 大嵐", bg: 3752526, fog: 3752526, back: 2897216, amb: [10134704, 0.45], sun: [12109008, 0.4], neonA: 0, neonB: 0, emissive: 0 },
   carnival: { label: "🎆 カーニバル", bg: 526356, fog: 526356, back: 855332, amb: [6710954, 0.42], sun: [10066380, 0.15], neonA: 0.5, neonB: 0.5, emissive: 1 },
   dance: { label: "🪩 おどりおどり", bg: 1312810, fog: 1312810, back: 1903930, amb: [8939263, 0.5], sun: [16777215, 0.2], neonA: 1.5, neonB: 1.5, emissive: 1 },
+  shoutou: { label: "🛏️ 消灯", bg: 924720, fog: 1187898, back: 1321028, amb: [6980264, 0.62], sun: [9480400, 0.5], neonA: 0, neonB: 0, emissive: 0 },
   fever: { label: "🌈 大当たり", bg: 16711850, fog: 16711850, back: 11141239, amb: [16777215, 0.8], sun: [16777215, 0.5], neonA: 2, neonB: 2, emissive: 1 }
 };
 const KIND_LIST = ["fish", "katsuo", "eel", "crab", "jelly", "hermit", "anemone"];
@@ -227,17 +228,23 @@ function localFortune(answers, charge) {
 }
 function makeShrimpNews() {
   const pk = (a) => a[Math.floor(Math.random() * a.length)];
-  const cat = Math.floor(Math.random() * 4);
+  const cat = Math.floor(Math.random() * 6);
   if (cat === 0) {
-    return pk(["【天気】", "【速報・天気】"]) + pk(["明日の水槽内", "横浜沖", "サンゴ礁周辺", "砂地エリア", "ろ過フィルター付近"]) + "は" + pk(["おおむね水", "ところにより泡", "プランクトン前線が通過し濃いめの水", "水流強め、ヒレ流され注意", "視界良好、ガラス越しに人類を観測できる", "ヒーター効果で小春日和"]) + pk(["でしょう。", "の見込みです。", "とのことです。", "と気象ガニが発表しました。"]);
+    return pk(["【天気】", "【速報・天気】", "【気象情報】"]) + pk(["明日の水槽内", "横浜沖", "サンゴ礁周辺", "砂地エリア", "ろ過フィルター付近", "岩場の裏", "水面付近", "ヒーター前", "賽銭箱周辺"]) + "は" + pk(["おおむね水", "ところにより泡", "プランクトン前線が通過し濃いめの水", "水流強め、ヒレ流され注意", "視界良好、ガラス越しに人類を観測できる", "ヒーター効果で小春日和", "夕方から軽い渦", "エサ粒子がぱらつく", "無風ならぬ無流", "底のほうがひんやり", "光のすじが見頃", "波ひとつない凪"]) + pk(["でしょう。", "の見込みです。", "とのことです。", "と気象ガニが発表しました。", "が予想されます。", "。お出かけ（散歩）日和です。"]);
   }
   if (cat === 1) {
-    return "【政治】" + pk(["カニ議会", "チンアナゴ党", "イソギンチャク連立", "ヤドカリ住宅省", "クラゲ無所属の会", "カツオ高速交通委員会"]) + "、" + pk(["エサ増量法案を可決", "砂利の再配分を巡り紛糾", "水換え税の導入を断念", "脱皮休暇の義務化を検討", "泡の発生量に上限を設ける案を提出", "「みんなえらい」決議を全会一致で採択"]) + pk(["。", "。審議は明日も続きます。", "。野党のカニは「異議なし」とハサミを上げました。"]);
+    return "【政治】" + pk(["カニ議会", "チンアナゴ党", "イソギンチャク連立", "ヤドカリ住宅省", "クラゲ無所属の会", "カツオ高速交通委員会", "ノリ海苔観光庁", "貝がら文化財団", "泡対策本部", "水質保全マグロ庁"]) + "、" + pk(["エサ増量法案を可決", "砂利の再配分を巡り紛糾", "水換え税の導入を断念", "脱皮休暇の義務化を検討", "泡の発生量に上限を設ける案を提出", "「みんなえらい」決議を全会一致で採択", "昼寝の権利を憲法に明記する案を提出", "ヒーター温度を巡り与野党が一致（珍事）", "観察パネルのプライバシー保護法を審議", "新エサ「ごちそう」の減税を発表", "賽銭の使い道を「全部エサ」と説明", "週休5日制の試験導入を可決", "おやつ第二次補正予算を編成", "水槽拡張公約を「検討中」と先送り"]) + pk(["。", "。審議は明日も続きます。", "。野党のカニは「異議なし」とハサミを上げました。", "。可決の瞬間、議場は静かに泡立ちました。", "。詳細は夜のヒレ会見で。", "。国民（水槽民）の関心が高まっています。"]);
   }
   if (cat === 2) {
-    return "【グルメ】" + pk(["いま話題の", "行列のできる", "通しか知らない", "深夜にしか開かない", "ミシュラン未掲載の"]) + pk(["プランクトン専門店", "アサリバル", "フレーク食べ放題の店", "二郎系（水槽店）", "タニタ食堂・海底支店", "高級ブラインシュリンプ亭"]) + "、" + pk(["本日も大盛況です。", "予約は3潮先まで埋まっています。", "店主はカニです。", "看板メニューは結局フレークです。", "口コミ評価は泡4.8です。"]);
+    return "【グルメ】" + pk(["いま話題の", "行列のできる", "通しか知らない", "深夜にしか開かない", "ミシュラン未掲載の", "三潮連続優勝の", "創業以来味を変えない", "リニューアルした"]) + pk(["プランクトン専門店", "アサリバル", "フレーク食べ放題の店", "二郎系（水槽店）", "タニタ食堂・海底支店", "高級ブラインシュリンプ亭", "回らない寿司（回るのは客）", "泡カフェ", "砂地のおにぎり屋", "海藻スムージースタンド"]) + "、" + pk(["本日も大盛況です。", "予約は3潮先まで埋まっています。", "店主はカニです。", "看板メニューは結局フレークです。", "口コミ評価は泡4.8です。", "おかわり無料は本日まで。", "支払いは貝がらのみ対応。", "テイクアウトは流されるため不可。", "常連のチンアナゴは砂から注文します。", "深夜は神様も並ぶとの噂。"]);
   }
-  return "【社会】" + pk(["本日未明、", "けさ、", "先ほど、", "現地時間さきほど、"]) + pk(["チンアナゴが全員同時に引っ込む現象が発生", "泡が例年より丸いと話題に", "ヤドカリの引っ越し渋滞が発生", "カツオが自己ベストを更新（水槽3周）", "イソギンチャクがわずかに動いたとの目撃情報", "謎の金貨が賽銭箱に落下", "ノリ海苔が新しいプランを発表"]) + pk(["。原因は不明です。", "。専門家は「かわいい」とコメントしています。", "。現場からは以上です。", "。続報が入り次第お伝えします。", "。けが人はいません。"]);
+  if (cat === 3) {
+    return "【スポーツ】" + pk(["カツオ", "ヤドカリ重量級王者", "チンアナゴ垂直跳び代表", "カニ横歩き競技連盟", "クラゲ漂流マラソン勢", "イソギンチャク不動の構え部門", "クマノミ水流サーフィン部", "泡くぐり五輪候補", "砂もぐり短距離のホープ", "ノリ海苔ひらひら体操団"]) + pk(["が自己ベストを更新", "が世界新記録（水槽内）を樹立", "がまさかの二度寝で予選敗退", "が逆転優勝", "が判定に「異議なし」と即答", "が引退を撤回（3回目）", "が新フォームを披露", "が移籍を発表（隣の岩へ）", "が今季絶好調", "がドーピング検査（エサ検査）を通過"]) + pk(["。", "。会場は泡に包まれました。", "。監督のカニは無言でハサミを上げました。", "。次戦は次の水換え後です。", "。ファンからは「かわいい」の声。", "。詳細はスポーツ面（砂）で。"]);
+  }
+  if (cat === 4) {
+    return "【経済】" + pk(["エサ先物市場", "泡通貨「アワコイン」", "貝がら不動産", "プランクトン株", "砂利インデックス", "海藻グリーン債", "ヒーター電力市場", "賽銭レート", "フレーク円相場"]) + pk(["が高騰", "が乱高下", "がストップ高", "が史上最高値を更新", "が静かに横ばい", "が突然の急落から全回復", "に買いが殺到", "が「気分」を理由に変動", "に新規上場の動き", "が満腹度と連動していると判明"]) + pk(["。", "。専門家は「泡だけに弾けるかも」と分析。", "。投資家のヤドカリは家を買い増しました。", "。市場関係者は様子を見ています（水槽だけに）。", "。明日の寄り付きに注目です。", "。なお通貨はすべて食べられます。"]);
+  }
+  return "【社会】" + pk(["本日未明、", "けさ、", "先ほど、", "現地時間さきほど、", "目撃情報によると、"]) + pk(["チンアナゴが全員同時に引っ込む現象が発生", "泡が例年より丸いと話題に", "ヤドカリの引っ越し渋滞が発生", "カツオが自己ベストを更新（水槽3周）", "イソギンチャクがわずかに動いたとの目撃情報", "謎の金貨が賽銭箱に落下", "ノリ海苔が新しいプランを発表", "クラゲ2匹が完全にシンクロ", "砂山が0.5ミリ成長", "観察してくる巨大生物（人類）が手を振った", "水温が0.1℃上がり「春が来た」と騒ぎに", "岩の位置が変わった気がすると通報", "エサの雨が局地的に降った", "全員が同じ方向を見る瞬間が観測された"]) + pk(["。原因は不明です。", "。専門家は「かわいい」とコメントしています。", "。現場からは以上です。", "。続報が入り次第お伝えします。", "。けが人はいません。", "。なお誰も困っていません。", "。本日のトップニュースです。"]);
 }
 const CLOCK_ORDER = ["pill", "neon", "retro", "cute"];
 const CLOCK_NAMES = { pill: "シンプル", neon: "ネオン", retro: "レトロ", cute: "キュート" };
@@ -307,11 +314,13 @@ const THOUGHTS = {
   anemone: ["今日も水槽は平和じゃのう", "カノンの帰りを待っとるんじゃ", "動かぬが勝ちじゃ"],
   philo: ["泳ぐとは、止まらないことの言い換えにすぎない…", "水槽の外を知らぬ我々は、外のない世界を生きているのか", "エサは降る。なぜと問うた者から眠りにつく", "ガラスの向こうに見えているのは、世界か、それとも自分か"],
   genius: ["水流の渦度から次の水換え時刻を逆算済み", "泡の上昇速度は約0.9m/s。ゆえにこの水槽の経済は健全", "フェルマーの最終定理、ヒレで証明できる気がしてきた", "エサの落下軌道、微分したら明日の天気が分かった"],
-  aho: ["水って…飲めるのか…？", "自分の名前、たまに忘れる", "右と左、どっちが右だっけ", "泡、食べたら泡の味がした", "きのう寝たら今日になってた。すごい"]
+  aho: ["水って…飲めるのか…？", "自分の名前、たまに忘れる", "右と左、どっちが右だっけ", "泡、食べたら泡の味がした", "きのう寝たら今日になってた。すごい"],
+  sleep: ["すやすや…", "ぐぅ…", "むにゃ…エサ…", "Zzz…", "もう食べられないよ…むにゃ", "おやすみなさい…"]
 };
 function instThought(inst, s, mk) {
   const slot = Math.floor(Date.now() / 9e3);
   const pick = (arr) => arr[(slot + inst.seed) % arr.length];
+  if (mk === "shoutou") return pick(THOUGHTS.sleep);
   if (mk === "storm") return pick(THOUGHTS.storm);
   if (mk === "dance") return pick(THOUGHTS.dance);
   if (mk === "fever") return pick(THOUGHTS.fever);
@@ -647,6 +656,7 @@ function AquariumLife3D() {
   const [noriResult, setNoriResult] = useState(null);
   const [noriFallback, setNoriFallback] = useState(false);
   const [newsText, setNewsText] = useState(makeShrimpNews);
+  const [supacha, setSupacha] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatTarget, setChatTarget] = useState("fish");
   const [chats, setChats] = useState({ fish: [], katsuo: [], eel: [], crab: [], jelly: [], hermit: [], anemone: [] });
@@ -1725,6 +1735,54 @@ function AquariumLife3D() {
           g.rotation.z = Math.sin(bp * 2 + inst.id) * 0.5;
           if (inst.tailGroup) inst.tailGroup.rotation.y = Math.sin(t * 20) * 0.7;
         }
+      } else if (mk === "shoutou") {
+        for (const inst of W.all) {
+          const g = inst.group;
+          if (inst.kind === "anemone") {
+            g.scale.y += (0.85 - g.scale.y) * Math.min(1, dt * 2);
+            inst.tentacles.forEach((tn) => {
+              tn.rotation.x = tn.userData.bx * 1.5 + Math.sin(t * 0.5 + tn.userData.ph) * 0.04;
+              tn.rotation.z = tn.userData.bz * 1.5;
+            });
+            continue;
+          }
+          if (inst.kind === "eel") {
+            inst.emerge = 1;
+            inst.targetE = 1;
+            g.position.y += (0.04 - g.position.y) * Math.min(1, dt * 1.5);
+            g.rotation.z += (1.45 + Math.sin(inst.phase) * 0.12 - g.rotation.z) * Math.min(1, dt * 1.5);
+            g.rotation.x *= Math.max(0, 1 - dt * 2);
+            continue;
+          }
+          if (inst.kind === "crab" || inst.kind === "hermit") {
+            g.position.y += (inst.groundY - 0.05 - g.position.y) * Math.min(1, dt * 2);
+            g.position.y += Math.sin(t * 1.2 + inst.id) * 4e-3;
+            g.rotation.y *= Math.max(0, 1 - dt * 2);
+            inst.legs.forEach((leg) => {
+              leg.rotation.z += (leg.userData.baseZ - leg.rotation.z) * Math.min(1, dt * 3);
+            });
+            if (inst.kind === "hermit") {
+              inst.hiding = false;
+              inst.soft.scale.x += (0.45 - inst.soft.scale.x) * Math.min(1, dt * 2);
+              inst.soft.scale.y = inst.soft.scale.x;
+              inst.soft.scale.z = inst.soft.scale.x;
+            }
+            continue;
+          }
+          if (inst.kind === "jelly") {
+            inst.ph += dt * 0.5;
+            const pulse = Math.max(0, Math.sin(inst.ph));
+            inst.bell.scale.set(1 + pulse * 0.05, 1 - pulse * 0.07, 1 + pulse * 0.05);
+            g.position.y += (1.7 + Math.sin(t * 0.4 + inst.id) * 0.15 - g.position.y) * Math.min(1, dt * 0.8);
+            g.rotation.z = Math.sin(t * 0.3 + inst.id) * 0.05;
+            continue;
+          }
+          g.position.y += (0.5 - g.position.y) * Math.min(1, dt * 1.2);
+          g.rotation.z += ((inst.id % 2 === 0 ? 1.25 : -1.25) - g.rotation.z) * Math.min(1, dt * 1.5);
+          g.rotation.x *= Math.max(0, 1 - dt * 2);
+          g.position.y += Math.sin(t * 1.1 + inst.id) * 4e-3;
+          if (inst.tailGroup) inst.tailGroup.rotation.y = Math.sin(t * 0.8 + inst.id) * 0.06;
+        }
       } else {
         const floating = W.pellets.filter((p) => !p.dead && !p.landed);
         for (const F of [...W.fishes, ...W.katsuoArr]) {
@@ -1893,14 +1951,14 @@ function AquariumLife3D() {
       }
       if (W.bg) {
         const stormy = mk === "storm";
-        const rayOp = mk === "hidamari" ? 0.2 : mk === "night" ? 0.05 : mk === "fever" ? 0.14 : mk === "dance" ? 0.1 : 0.07;
+        const rayOp = mk === "hidamari" ? 0.2 : mk === "night" ? 0.05 : mk === "shoutou" ? 0.05 : mk === "fever" ? 0.14 : mk === "dance" ? 0.1 : 0.07;
         W.bg.rays.forEach((rm2) => {
           rm2.material.opacity = rayOp * (0.65 + 0.35 * Math.sin(t * 0.5 + rm2.userData.ph));
           rm2.position.x = rm2.userData.baseX + Math.sin(t * 0.16 + rm2.userData.ph) * 0.55;
           rm2.scale.x = 1 + Math.sin(t * 0.4 + rm2.userData.ph) * 0.22;
         });
         W.bg.silhs.forEach((sg) => {
-          sg.position.x += sg.userData.speed * (stormy ? 2.6 : 1) * dt;
+          sg.position.x += sg.userData.speed * (stormy ? 2.6 : mk === "shoutou" ? 0.25 : 1) * dt;
           sg.position.y = sg.userData.baseY + Math.sin(t * 1.2 + sg.userData.ph) * 0.18;
           if (sg.userData.flap) sg.scale.y = sg.userData.baseSc * (1 + Math.sin(t * 3 + sg.userData.ph) * 0.28);
           if (sg.position.x > 6.4) sg.position.x = -6.4;
@@ -1930,6 +1988,13 @@ function AquariumLife3D() {
           W.nori.rotation.y += dt * 10;
           W.nori.rotation.z = Math.sin(nbp * 2) * 0.6;
           W.nori.rotation.x *= Math.max(0, 1 - dt * 5);
+        } else if (mk === "shoutou") {
+          W.nori.position.x += (2.6 - W.nori.position.x) * Math.min(1, dt);
+          W.nori.position.y += (0.12 - W.nori.position.y) * Math.min(1, dt * 1.2);
+          W.nori.position.z = 0.6;
+          W.nori.rotation.x += (Math.PI / 2 - W.nori.rotation.x) * Math.min(1, dt * 1.5);
+          W.nori.rotation.y *= Math.max(0, 1 - dt * 2);
+          W.nori.rotation.z *= Math.max(0, 1 - dt * 2);
         } else {
           W.nori.rotation.x *= Math.max(0, 1 - dt * 5);
           W.nori.position.x = 3.1 + Math.sin(t * 0.35) * 1.4;
@@ -2073,19 +2138,29 @@ function AquariumLife3D() {
     setNoriOpen(true);
     setNoriStep("loading");
     setNoriFallback(false);
+    setSupacha(null);
     const today = (/* @__PURE__ */ new Date()).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
     const prompt = "あなたは水槽にただよう、ノリがいい海苔のキャラ「ノリ海苔」。ハイテンションで語尾は「〜だべ」。暇な人のために今日(" + today + ')の起床から就寝までの1日プランをタイムスケジュール形式で提案する。食事の提案も必ず入れる。シュールでクスッと笑える提案を大歓迎（例: 公園のハトに敬語で話しかける、電器屋で4Kテレビを見るだけ見て帰る）。ただし違法行為・迷惑行為は提案しない。\n以下のJSONのみを出力（コードブロック記号や前置きは禁止）:\n{"title":"プラン名（キャッチーで面白く）","plan":[{"time":"朝8時","text":"やること"}を7〜9項目、寝るまで],"hitokoto":"締めのノリのいい一言"}';
-    try {
-      const raw = await callClaude([{ role: "user", content: prompt }]);
-      setNoriResult(JSON.parse(raw.replace(/```json|```/g, "").trim()));
-      setAiStatus("ok");
-    } catch (e) {
-      setNoriResult(localNoriPlan());
-      setNoriFallback(true);
-      setAiStatus("ng");
-    }
+    const fetchP = (async () => {
+      try {
+        const raw = await callClaude([{ role: "user", content: prompt }]);
+        return { res: JSON.parse(raw.replace(/```json|```/g, "").trim()), fb: false };
+      } catch (e) {
+        return { res: localNoriPlan(), fb: true };
+      }
+    })();
+    const [o] = await Promise.all([fetchP, new Promise((r) => setTimeout(r, 2200))]);
+    setNoriResult(o.res);
+    setNoriFallback(o.fb);
+    setAiStatus(o.fb ? "ng" : "ok");
     setNoriStep("result");
     talkingRef.current = Date.now() + 4e3;
+  };
+  const sendSupacha = (amt) => {
+    const replies = ["うおおお！ごちそうさまだべ！！", "一生ついていくべ！！", "今夜は手巻き寿司パーティーだべ！", "その気持ちで海苔1枚パリッパリだべ！", "額じゃない、ノリが嬉しいんだべ…！", "飼い主さん、最高だべ〜〜！"];
+    setSupacha({ amount: amt, reply: replies[Math.floor(Math.random() * replies.length)] });
+    talkingRef.current = Date.now() + 2500;
+    effectCenter("💸 スパチャだべ！");
   };
   const exitObserve = () => {
     observeRef.current = null;
@@ -2258,6 +2333,9 @@ function AquariumLife3D() {
         @keyframes rushPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
         @keyframes shrimpTalk { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-1.5px) rotate(4deg); } }
         @keyframes rayspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes noriThink { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        @keyframes thinkFloat { 0%,100% { transform: translateY(0); opacity: .9; } 50% { transform: translateY(-6px); opacity: .5; } }
+        @keyframes thinkDot { 0%,100% { opacity: .2; } 40% { opacity: 1; } }
       `), !standby && /* @__PURE__ */ React.createElement("header", { style: styles.header }, /* @__PURE__ */ React.createElement("h1", { style: styles.title }, "アクアリウムライフ ", /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, opacity: 0.7 } }, "3D")), /* @__PURE__ */ React.createElement("p", { style: styles.subtitle }, "〜 カニとクマノミとチンアナゴと ゆかいななかまたち 〜"), /* @__PURE__ */ React.createElement("p", { style: styles.weather }, "📍横浜市の天気：", weather ? weather.err ? "取得できず🛜" : wxEmoji(weather.code) + " " + weather.temp + "℃" : "取得中…")), !standby && /* @__PURE__ */ React.createElement("div", { style: styles.newsBar }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "shrimpTalk .16s ease-in-out infinite alternate", fontSize: 18, flex: "0 0 auto" } }, "🦐"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, flex: "0 0 auto" } }, "🎙️"), /* @__PURE__ */ React.createElement("span", { style: styles.newsLabel }, "エビニュース24"), /* @__PURE__ */ React.createElement("span", { key: newsText, style: styles.newsText }, newsText)), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
     "div",
     {
@@ -2339,12 +2417,12 @@ function AquariumLife3D() {
       style: { ...styles.btn, background: "#b8902e", width: "100%", marginTop: 8 }
     },
     "ありがたく閉じる"
-  )))), noriOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setNoriOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🌿 ノリ海苔の1日プラン"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setNoriOpen(false), style: styles.closeBtn }, "✕ 閉じる")), noriStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "14px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "nori", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.8 } }, "ノリ海苔がノリノリでプランを巻いています…だべ…")), noriStep === "result" && noriResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 2 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "nori", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { textAlign: "center", fontSize: 15, fontWeight: 800, margin: "0 0 4px" } }, "📋 ", noriResult.title || "本日のプラン"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px", textAlign: "center" } }, "暇なあなたへ、寝るまでのプランだべ", noriFallback ? "（オフライン版だべ）" : ""), Array.isArray(noriResult.plan) && noriResult.plan.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", gap: 10, marginBottom: 7, background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 11px" } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 12.5, color: "#9be8a8", whiteSpace: "nowrap", paddingTop: 1 } }, p.time), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, lineHeight: 1.65 } }, p.text))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 8 } }, "🌿「", noriResult.hitokoto, "」"), /* @__PURE__ */ React.createElement(
+  )))), noriOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setNoriOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "🌿 ノリ海苔の1日プラン"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setNoriOpen(false), style: styles.closeBtn }, "✕ 閉じる")), noriStep === "loading" && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "14px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 24, animation: "thinkFloat 1.6s ease-in-out infinite" } }, "💭"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", animation: "noriThink 1.1s ease-in-out infinite" } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "nori", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, opacity: 0.85, margin: "6px 0 0" } }, "ウンウン…巻き巻き…考え中だべ", /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "thinkDot 1.2s infinite" } }, "."), /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "thinkDot 1.2s .2s infinite" } }, "."), /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "thinkDot 1.2s .4s infinite" } }, "."))), noriStep === "result" && noriResult && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 2 } }, /* @__PURE__ */ React.createElement(ChatAvatar, { type: "nori", talkingRef })), /* @__PURE__ */ React.createElement("p", { style: { textAlign: "center", fontSize: 15, fontWeight: 800, margin: "0 0 4px" } }, "📋 ", noriResult.title || "本日のプラン"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, opacity: 0.7, margin: "0 0 10px", textAlign: "center" } }, "暇なあなたへ、寝るまでのプランだべ", noriFallback ? "（オフライン版だべ）" : ""), Array.isArray(noriResult.plan) && noriResult.plan.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", gap: 10, marginBottom: 7, background: "rgba(255,255,255,.05)", borderRadius: 10, padding: "8px 11px" } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 12.5, color: "#9be8a8", whiteSpace: "nowrap", paddingTop: 1 } }, p.time), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, lineHeight: 1.65 } }, p.text))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, fontStyle: "italic", opacity: 0.85, marginTop: 8 } }, "🌿「", noriResult.hitokoto, "」"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 11.5, opacity: 0.7, textAlign: "center", margin: "0 0 6px" } }, "感謝のスパチャを送る（気持ちだけ・無料だべ）"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => sendSupacha(100), style: { ...styles.btn, background: "#1e88e5", padding: "10px 4px", fontSize: 12.5 } }, "💙 ¥100"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => sendSupacha(1e3), style: { ...styles.btn, background: "#ffb300", color: "#3a2a00", padding: "10px 4px", fontSize: 12.5 } }, "💛 ¥1,000"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => sendSupacha(1e4), style: { ...styles.btn, background: "#e53935", padding: "10px 4px", fontSize: 12.5 } }, "❤️ ¥10,000")), supacha && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, borderRadius: 12, overflow: "hidden", animation: "fadeIn .25s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { background: supacha.amount >= 1e4 ? "#e53935" : supacha.amount >= 1e3 ? "#ffb300" : "#1e88e5", color: supacha.amount >= 1e3 && supacha.amount < 1e4 ? "#3a2a00" : "#fff", padding: "8px 12px", fontWeight: 800, fontSize: 13 } }, "💸 ¥", supacha.amount.toLocaleString(), "　名無しの飼い主さん「いつもありがとう」"), /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(255,255,255,.08)", padding: "8px 12px", fontSize: 13 } }, "🌿「", supacha.reply, "」"))), /* @__PURE__ */ React.createElement(
     "button",
     {
       className: "aq-btn",
       onClick: doNori,
-      style: { ...styles.btn, background: "#2e9e5b", width: "100%", marginTop: 8 }
+      style: { ...styles.btn, background: "#2e9e5b", width: "100%", marginTop: 10 }
     },
     "べつのプランを巻いてもらう"
   )))), chatOpen && /* @__PURE__ */ React.createElement("div", { style: styles.modalBack, onClick: () => setChatOpen(false) }, /* @__PURE__ */ React.createElement("div", { style: styles.modal, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("b", { style: { fontSize: 15 } }, "💬 おさかなチャット"), /* @__PURE__ */ React.createElement("button", { className: "aq-btn", onClick: () => setChatOpen(false), style: styles.closeBtn }, "✕ 閉じる")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 } }, KIND_LIST.map((k) => /* @__PURE__ */ React.createElement(
