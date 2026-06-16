@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Aquarium Life — UI Components</title>
+<style>
+/* ============================================================
+   Aquarium Life UI Components
+   underwater glass UI / premium mobile game / translucent
+   ============================================================ */
+
+/* ---- カラーパレット（指示書準拠） ---- */
+:root {
+  --glass-bg:        rgba(255,255,255,0.12);
+  --glass-bg-soft:   rgba(255,255,255,0.07);
+  --glass-border:    rgba(255,255,255,0.22);
+  --glass-highlight: rgba(255,255,255,0.32);
+
+  --blue1: #4FC3F7;
+  --blue2: #29B6F6;
+  --blue3: #1565C0;
+  --deep:  #0D1B4C;
+
+  --green: #5EDB8F;
+  --cyan:  #6FE8FF;
+  --orange:#FFB340;
+  --pink:  #FF5AA5;
+
+  --radius: 32px;
+
+  /* 厚みのあるガラス：3層レイヤードグラデ（上明→中→下暗） */
+  --glass-layer: linear-gradient(160deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.08) 48%,
+    rgba(255,255,255,0.04) 100%);
+
+  /* 厚みを出す影：外周リムライト＋内側上ハイライト＋内側下シャドウ＋落ち影（光源は左上） */
+  --glass-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.55),
+    inset 1.5px 0 0 rgba(255,255,255,0.18),
+    inset 0 -10px 20px rgba(0,40,90,0.22),
+    inset -6px -6px 16px rgba(0,30,70,0.14),
+    0 10px 34px rgba(0,30,70,0.28),
+    0 0 0 1px rgba(255,255,255,0.10);
+
+  --text:     #eaf6ff;
+  --text-dim: #a8c8e0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  color: var(--text);
+  min-height: 100%;
+}
+
+/* ---- 海の最背面背景（固定・添付画像） ---- */
+body {
+  background-color: #0d3b66;
+  background-image:
+    linear-gradient(to bottom,
+      rgba(79,195,247,0.05) 0%, rgba(21,101,192,0) 30%,
+      rgba(13,27,76,0.22) 80%, rgba(8,18,50,0.4) 100%),
+    url('ocean-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  padding: 28px 18px 120px;
+}
+
+/* ============================================================
+   共通: Glassmorphism ベース（全パーツで再利用）
+   ============================================================ */
+.glass {
+  background: var(--glass-layer);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+/* 上辺の強い艶＋左上の鏡面反射（specular・光源は左上） */
+.glass::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(58% 40% at 20% 8%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 50%),
+    linear-gradient(180deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 40%);
+  pointer-events: none;
+  border-radius: inherit;
+  mix-blend-mode: screen;
+}
+
+/* ---- ギャラリーのレイアウト ---- */
+.page-head { max-width: 980px; margin: 0 auto 26px; text-align: center; }
+.page-head h1 {
+  font-size: 30px; font-weight: 800; letter-spacing: 1px;
+  text-shadow: 0 0 24px rgba(120,210,255,.5), 0 2px 6px rgba(0,20,50,.5);
+}
+.page-head p { font-size: 13px; color: var(--text-dim); margin-top: 6px; }
+
+.gallery { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+.section { }
+.section > h2 {
+  font-size: 15px; font-weight: 800; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+  color: #cfeaff;
+}
+.section > h2 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 8px;
+  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.2);
+  font-size: 12px;
+}
+.sub-label { font-size: 11px; color: var(--text-dim); margin: 0 0 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+
+/* ============================================================
+   1. Glass Panel
+   ============================================================ */
+.glass-panel {
+  background: var(--glass-layer);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 32px;
+  position: relative; overflow: hidden;
+  padding: 18px 20px;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.glass-panel::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(55% 38% at 18% 6%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 52%),
+    linear-gradient(180deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 38%);
+  pointer-events: none; border-radius: inherit; mix-blend-mode: screen;
+}
+.glass-panel:hover { background: linear-gradient(160deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.10) 100%); }
+.panel-card { border-radius: 28px; }
+.panel-info { border-radius: 28px; }
+.panel-wide { width: 100%; max-width: 440px; }
+.panel-news { display: flex; gap: 12px; align-items: flex-start; }
+.panel-news .shrimp { font-size: 26px; flex: 0 0 auto; }
+.panel-news .body { flex: 1; position: relative; z-index: 1; }
+.panel-news .mic { font-size: 20px; opacity: 0.7; position: absolute; top: 14px; right: 14px; }
+.panel-card { width: 200px; min-height: 150px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.panel-info { width: 230px; padding: 16px; }
+
+/* ============================================================
+   2. Glass Button
+   ============================================================ */
+.glass-button {
+  height: 56px; min-width: 150px;
+  padding: 0 26px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 50%, rgba(120,180,230,0.10) 100%);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 999px;
+  color: var(--text); font-size: 15px; font-weight: 700; font-family: inherit;
+  cursor: pointer; position: relative; overflow: hidden;
+  transform: translateY(0);
+  transition: transform 0.22s cubic-bezier(.34,1.4,.6,1), background 0.25s ease, box-shadow 0.22s ease;
+}
+.glass-button::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(50% 60% at 16% 0%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 50%);
+  pointer-events: none; border-radius: inherit; mix-blend-mode: screen;
+}
+.glass-button:hover {
+  background: linear-gradient(160deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.16) 50%, rgba(120,180,230,0.16) 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.6),
+    inset 0 -10px 20px rgba(0,40,90,0.22),
+    0 14px 38px rgba(0,40,90,0.35),
+    0 0 22px rgba(120,210,255,0.3);
+}
+.glass-button:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow:
+    inset 0 2px 6px rgba(0,40,90,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 4px 12px rgba(0,30,70,0.25);
+}
+.glass-button.secondary { background: linear-gradient(160deg, rgba(120,180,230,0.26) 0%, rgba(40,100,170,0.14) 100%); }
+.glass-button .arrow { margin-left: auto; opacity: 0.8; }
+.glass-button.icon-only { min-width: 58px; width: 58px; padding: 0; border-radius: 50%; font-size: 20px; }
+
+/* ボタン状態の small デモ用 */
+.btn-state { height: 44px; min-width: 96px; font-size: 13px; border-radius: 999px; }
+.btn-state.is-hover { background: linear-gradient(160deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.16) 100%); transform: translateY(-2px); }
+.btn-state.is-active { transform: translateY(2px) scale(0.98); background: linear-gradient(160deg, rgba(120,180,230,0.3) 0%, rgba(40,100,170,0.2) 100%); }
+
+/* ============================================================
+   3. Bubble Button（最重要・リアルな泡）
+   ------------------------------------------------------------
+   多層 radial-gradient で「外周の輪郭・内部の透明感・左上の
+   白ハイライト」を表現。単なる青い丸にしない。
+   ============================================================ */
+.bubble-button {
+  width: 84px; height: 84px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  text-align: center; cursor: pointer; position: relative;
+  font-size: 12px; font-weight: 800; color: #f2ffff;
+  text-shadow: 0 1px 4px rgba(0,50,100,0.7);
+  /* === シャボン玉の本体：5層 radial-gradient === */
+  background:
+    /* (1) 左上の強い specular ハイライト（小さい白楕円） */
+    radial-gradient(38% 30% at 30% 24%, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0) 62%),
+    /* (2) 右下の小ハイライト（反対側の反射） */
+    radial-gradient(26% 22% at 74% 78%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 60%),
+    /* (3) 外周の屈折リング（縁が明るく光る） */
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 64%, rgba(180,235,255,0.35) 78%, rgba(255,255,255,0.7) 88%, rgba(150,215,255,0.3) 95%, rgba(255,255,255,0) 100%),
+    /* (4) 下部の青い屈折グラデ（海の色が映り込む） */
+    radial-gradient(80% 80% at 50% 78%, rgba(40,140,220,0.32) 0%, rgba(30,100,190,0.12) 45%, rgba(255,255,255,0) 72%),
+    /* (5) 中心の透明感（背景がうっすら透ける） */
+    radial-gradient(circle at 50% 46%, rgba(120,200,255,0.04) 0%, rgba(90,180,250,0.10) 55%, rgba(140,210,255,0.16) 100%);
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow:
+    inset 0 3px 8px rgba(255,255,255,0.6),         /* 内側上のツヤ */
+    inset 0 -8px 16px rgba(20,90,170,0.4),          /* 内側下の海色の陰 */
+    inset 5px 2px 12px rgba(255,255,255,0.22),      /* 左上からの内部反射 */
+    0 8px 24px rgba(0,70,140,0.45),                 /* 落ち影 */
+    0 0 20px rgba(130,220,255,0.25);                /* 周囲のソフトグロー */
+  backdrop-filter: blur(2px);                       /* 擬似レンズ：背景が少し歪む */
+  -webkit-backdrop-filter: blur(2px);
+  animation: bubbleFloat 3.2s ease-in-out infinite;
+  transition: transform 0.2s cubic-bezier(.34,1.4,.6,1), box-shadow 0.25s ease;
+  will-change: transform;
+}
+/* 表面の流れる光沢（ゆっくり回る薄いハイライト） */
+.bubble-button::after {
+  content: ""; position: absolute; inset: 6px; border-radius: 50%;
+  background:
+    radial-gradient(40% 18% at 38% 20%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
+  filter: blur(1px);
+}
+.bubble-button span { position: relative; z-index: 2; line-height: 1.25; }
+.bubble-button.hover-demo {
+  transform: scale(1.07) translateY(-2px);
+  box-shadow:
+    inset 0 3px 10px rgba(255,255,255,0.7),
+    inset 0 -8px 18px rgba(20,90,170,0.45),
+    0 14px 34px rgba(0,80,160,0.5),
+    0 0 32px rgba(140,225,255,0.55);
+}
+
+/* 常時ふわふわ＋わずかな膨張縮小 */
+@keyframes bubbleFloat {
+  0%, 100% { transform: translateY(0)    scale(1); }
+  50%      { transform: translateY(-4px) scale(1.03); }
+}
+/* クリックで弾ける */
+@keyframes bubblePop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.85); }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1.4);  opacity: 0; }
+}
+.bubble-button.popping { animation: bubblePop 0.45s ease forwards; }
+
+/* 弾けたときに散る泡粒子 */
+.burst-particle {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95), rgba(170,220,255,0.4) 60%, rgba(150,210,255,0));
+  border: 1px solid rgba(255,255,255,0.5);
+  animation: burst 0.6s ease-out forwards;
+}
+@keyframes burst {
+  from { transform: translate(0,0) scale(1); opacity: 1; }
+  to   { transform: translate(var(--bx), var(--by)) scale(0.2); opacity: 0; }
+}
+
+/* 泡の段階デモ（縮む→弾ける→消える） */
+.bubble-stage { display: flex; align-items: center; gap: 14px; }
+.bubble-stage .arrow { opacity: 0.6; font-size: 18px; }
+.bubble-mini { width: 64px; height: 64px; animation: none; }
+.bubble-mini.s1 { transform: scale(0.85); }
+.bubble-mini.s2 { transform: scale(1.12); opacity: 0.7; }
+.bubble-mini.s3 {
+  background: radial-gradient(circle at 50% 50%, rgba(150,225,255,0.4), rgba(150,225,255,0));
+  opacity: 0.4;
+}
+.stage-cap { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 6px; }
+
+/* ============================================================
+   4. Stat Card
+   ============================================================ */
+.stat-card {
+  width: 220px; padding: 16px 18px;
+  background: var(--glass-layer);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 28px; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(55% 38% at 18% 6%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 52%),
+    linear-gradient(180deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 38%);
+  pointer-events: none; border-radius: inherit; mix-blend-mode: screen;
+}
+.stat-card .head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1; }
+.stat-card .title { font-size: 14px; font-weight: 800; }
+.stat-card .icon { font-size: 16px; }
+.stat-card .note { font-size: 10px; color: var(--text-dim); margin-bottom: 10px; position: relative; z-index: 1; }
+.stat-card .pct { font-size: 13px; font-weight: 800; text-align: right; margin-top: 6px; }
+
+/* ============================================================
+   5. Progress Bar
+   ============================================================ */
+.glass-progress {
+  height: 12px; border-radius: 999px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.1);
+  overflow: hidden; position: relative;
+}
+.progress-fill {
+  height: 100%; border-radius: 999px;
+  position: relative; overflow: hidden;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.7), inset 0 -2px 4px rgba(0,40,90,0.25);
+  transition: width 0.6s cubic-bezier(.4,0,.2,1);
+}
+.progress-fill::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0));
+  border-radius: 999px;
+}
+/* 色ルール（指示書準拠） */
+.fill-green   { background: linear-gradient(90deg, #5EDB8F, #84FFBD); }
+.fill-blue    { background: linear-gradient(90deg, #4FC3F7, #29B6F6); }
+.fill-orange  { background: linear-gradient(90deg, #FF9F1C, #FFD166); }
+.fill-pink    { background: linear-gradient(90deg, #FF5AA5, #FF7CC4); }
+
+.progress-demo { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; }
+.progress-demo .line { display: flex; align-items: center; gap: 12px; }
+.progress-demo .line .lbl { font-size: 12px; width: 110px; color: var(--text-dim); }
+.progress-demo .line .bar { flex: 1; }
+.progress-demo .line .val { font-size: 12px; font-weight: 700; width: 42px; text-align: right; }
+
+/* ============================================================
+   6. News Badge
+   ============================================================ */
+.news-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 13px; border-radius: 999px;
+  background: linear-gradient(180deg, #FF8A5D 0%, #F4502A 100%);
+  color: #fff; font-size: 12px; font-weight: 800;
+  box-shadow: 0 0 16px rgba(255,90,40,0.55), inset 0 1.5px 0 rgba(255,255,255,0.5), inset 0 -3px 6px rgba(150,30,0,0.3);
+}
+.news-badge.small { height: 20px; font-size: 10px; padding: 0 9px; }
+
+/* ============================================================
+   7. Toggle Switch
+   ============================================================ */
+.toggle-switch {
+  width: 56px; height: 30px; border-radius: 999px;
+  background: rgba(120,140,160,0.4);
+  border: 1px solid rgba(255,255,255,0.18);
+  position: relative; cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  flex: 0 0 auto;
+}
+.toggle-switch .knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+}
+.toggle-switch.on {
+  background: linear-gradient(180deg, #4FC3F7, #1565C0);
+  box-shadow: 0 0 14px rgba(80,190,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.toggle-switch.on .knob { transform: translateX(26px); }
+
+/* ============================================================
+   8. Chip / Tag
+   ============================================================ */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 30px; padding: 0 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+}
+.chip.green  { border-color: rgba(94,219,143,0.5);  color: #aef5c8; }
+.chip.purple { border-color: rgba(160,130,255,0.5); color: #cdbcff; }
+.chip.orange { background: linear-gradient(180deg, rgba(255,160,60,0.3), rgba(255,120,30,0.2)); border-color: rgba(255,170,80,0.6); color: #ffd9a8; }
+
+/* ============================================================
+   9. Bottom Navigation
+   ============================================================ */
+.bottom-tab-bar {
+  height: 96px; width: 100%; max-width: 440px;
+  display: flex; align-items: center; justify-content: space-around;
+  padding: 0 8px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 36px; position: relative; overflow: hidden;
+  background: var(--glass-layer);
+}
+.bottom-tab-bar::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(45% 40% at 14% 4%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 28%);
+  pointer-events: none; border-radius: inherit; mix-blend-mode: screen;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  cursor: pointer; position: relative; z-index: 1;
+  color: var(--text-dim); transition: all 0.2s ease;
+}
+.tab-item .ic {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: all 0.2s ease;
+}
+.tab-item .lbl { font-size: 10px; font-weight: 700; }
+.tab-item.active { color: #eaffff; transform: translateY(-2px); }
+.tab-item.active .ic {
+  background: linear-gradient(180deg, rgba(80,200,255,0.4), rgba(30,110,200,0.3));
+  border-color: rgba(120,220,255,0.6);
+  box-shadow: 0 0 18px rgba(90,200,255,0.5);
+}
+.tab-item .dot {
+  position: absolute; top: 0; right: 22%;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--pink); box-shadow: 0 0 8px var(--pink);
+}
+
+/* ============================================================
+   10. Modal / Popup
+   ============================================================ */
+.modal-demo-wrap { width: 100%; max-width: 420px; }
+.glass-modal {
+  padding: 24px 22px; border-radius: 36px;
+  background: linear-gradient(160deg, rgba(40,75,130,0.6) 0%, rgba(18,40,85,0.62) 100%);
+  backdrop-filter: blur(24px) saturate(1.25);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), 0 24px 60px rgba(0,0,0,0.45);
+  position: relative; overflow: hidden; text-align: center;
+}
+.glass-modal::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(50% 32% at 16% 4%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, var(--glass-highlight) 0%, rgba(255,255,255,0) 30%);
+  pointer-events: none; border-radius: inherit; mix-blend-mode: screen;
+}
+.glass-modal .title { font-size: 19px; font-weight: 800; position: relative; z-index: 1; }
+.glass-modal .desc { font-size: 12px; color: var(--text-dim); margin: 6px 0 16px; position: relative; z-index: 1; }
+.glass-modal .rewards { display: flex; justify-content: center; gap: 22px; margin-bottom: 16px; position: relative; z-index: 1; }
+.glass-modal .reward { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.glass-modal .reward .e { font-size: 34px; }
+.glass-modal .reward .q { font-size: 12px; color: var(--text-dim); }
+.glass-modal .close {
+  position: absolute; top: 14px; right: 14px; z-index: 2;
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; font-size: 14px;
+}
+/* モーダル出現アニメ */
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.glass-modal.animate { animation: modalIn 0.3s ease forwards; }
+
+/* ============================================================
+   11. Icon Set
+   ============================================================ */
+.icon-chip {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 19px;
+  background:
+    radial-gradient(40% 32% at 30% 22%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(160deg, rgba(90,170,235,0.35), rgba(30,90,170,0.28));
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.55), inset 0 -4px 8px rgba(0,40,90,0.3), 0 5px 14px rgba(0,40,90,0.32);
+}
+
+/* ============================================================
+   12. Decorative Bubble（背景装飾・JS生成）
+   ============================================================ */
+.deco-bubble-stage {
+  width: 100%; max-width: 440px; height: 160px; position: relative;
+  border-radius: 20px; overflow: hidden;
+  background: rgba(0,30,70,0.2); border: 1px solid rgba(255,255,255,0.08);
+}
+.deco-bubble {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 20%),
+    radial-gradient(circle at 50% 50%, rgba(150,220,255,0.04) 50%, rgba(170,225,255,0.35) 85%, rgba(200,240,255,0.15) 100%);
+  border: 1px solid rgba(255,255,255,0.4);
+  bottom: -40px;
+}
+
+/* ============================================================
+   13. List Item
+   ============================================================ */
+.list-item {
+  width: 100%; max-width: 440px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; margin-bottom: 8px;
+  background: var(--glass-bg-soft);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 24px; position: relative; overflow: hidden;
+  cursor: pointer; transition: background 0.2s ease, transform 0.2s ease;
+  background: var(--glass-layer);
+}
+.list-item::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0));
+  pointer-events: none; border-radius: inherit;
+}
+.list-item:hover { background: linear-gradient(160deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08)); transform: translateX(2px); }
+.list-item > * { position: relative; z-index: 1; }
+.list-item .e { font-size: 22px; flex: 0 0 auto; }
+.list-item .txt { flex: 1; font-size: 13px; font-weight: 700; }
+.list-item .time { font-size: 11px; color: var(--text-dim); }
+.list-item .chev { opacity: 0.5; font-size: 14px; }
+
+/* ---- アクセシビリティ: 動きを減らす設定 ---- */
+@media (prefers-reduced-motion: reduce) {
+  .bubble-button, .deco-bubble { animation: none !important; }
+}
+
+/* ---- レスポンシブ ---- */
+@media (max-width: 560px) {
+  .page-head h1 { font-size: 24px; }
+  .stat-card { width: calc(50% - 7px); }
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Aquarium Life UI</h1>
+  <p>海を感じる、透明感のあるガラスUIコンポーネント集</p>
+</div>
+
+<div class="gallery" id="gallery">
+
+  <!-- 1. Glass Panel -->
+  <section class="section">
+    <h2><span class="num">1</span> Glass Panel（パネル）</h2>
+    <p class="sub-label">標準パネル（横長）</p>
+    <div class="glass-panel panel-wide panel-news">
+      <span class="shrimp">🦐</span>
+      <div class="body">
+        <span class="news-badge" style="margin-bottom:6px">エビニュース24</span>
+        <p style="font-size:12.5px;line-height:1.6;margin-top:6px">【グルメ】行列のできる砂地のおにぎり屋、おかわり無料は本日まで。</p>
+      </div>
+      <span class="mic">🎙️</span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="glass-panel panel-card">
+        <p class="sub-label" style="margin:0">カードパネル（縦長）</p>
+        <div style="display:flex;align-items:center;gap:8px;position:relative;z-index:1">
+          <span style="font-size:30px">🌡️</span>
+          <div><div style="font-size:24px;font-weight:800">25.0℃</div><div style="font-size:12px;color:#84e8a0">ちょうどいい 😊</div></div>
+        </div>
+      </div>
+      <div class="glass-panel panel-info">
+        <p class="sub-label" style="margin:0 0 8px">情報パネル（中サイズ）</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1">
+          <b style="font-size:13px">本日のゲスト</b>
+          <span style="font-size:11px;color:#ffd166">レア度 ★★★★☆</span>
+        </div>
+        <div style="text-align:center;font-size:30px;margin:8px 0;position:relative;z-index:1">🐢</div>
+        <div style="text-align:center;font-size:11px;color:var(--text-dim);position:relative;z-index:1">深海からの来訪者かも…？</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Glass Button -->
+  <section class="section">
+    <h2><span class="num">2</span> Glass Button（ボタン）</h2>
+    <div class="row">
+      <button class="glass-button">プライマリ <span class="arrow">›</span></button>
+      <button class="glass-button secondary">セカンダリ <span class="arrow">›</span></button>
+      <button class="glass-button icon-only">⚙️</button>
+      <button class="glass-button icon-only">🎵</button>
+    </div>
+    <p class="sub-label" style="margin-top:12px">状態：通常 / ホバー / アクティブ</p>
+    <div class="row">
+      <button class="glass-button btn-state">通常</button>
+      <button class="glass-button btn-state is-hover">ホバー</button>
+      <button class="glass-button btn-state is-active">アクティブ</button>
+    </div>
+  </section>
+
+  <!-- 3. Bubble Button（最重要） -->
+  <section class="section">
+    <h2><span class="num">3</span> Bubble Button（泡ボタン）</h2>
+    <div class="row" style="align-items:center;gap:30px">
+      <div style="text-align:center">
+        <p class="sub-label">通常状態</p>
+        <div class="bubble-button" data-bubble><span>泡<br>ガチャ<br><b style="font-size:11px">3/3</b></span></div>
+      </div>
+      <div style="text-align:center">
+        <p class="sub-label">ホバー状態</p>
+        <div class="bubble-button hover-demo"><span>泡<br>ガチャ<br><b style="font-size:11px">3/3</b></span></div>
+      </div>
+      <div style="text-align:center">
+        <p class="sub-label">タップで弾ける（クリックしてみて！）</p>
+        <div class="bubble-stage">
+          <div style="text-align:center"><div class="bubble-button bubble-mini s1"><span>①</span></div><div class="stage-cap">縮む</div></div>
+          <span class="arrow">→</span>
+          <div style="text-align:center"><div class="bubble-button bubble-mini s2"><span>②</span></div><div class="stage-cap">弾ける</div></div>
+          <span class="arrow">→</span>
+          <div style="text-align:center"><div class="bubble-button bubble-mini s3"><span>!</span></div><div class="stage-cap">消える</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Stat Card -->
+  <section class="section">
+    <h2><span class="num">4</span> Stat Card（ステータスカード）</h2>
+    <div class="row">
+      <div class="stat-card">
+        <div class="head"><span class="title">満腹度</span><span class="icon">😊</span></div>
+        <div class="note">おなか</div>
+        <div class="glass-progress"><div class="progress-fill fill-green" style="width:78%"></div></div>
+        <div class="pct">78%</div>
+      </div>
+      <div class="stat-card">
+        <div class="head"><span class="title">水質</span><span class="icon">✨</span></div>
+        <div class="note">きれい</div>
+        <div class="glass-progress"><div class="progress-fill fill-blue" style="width:92%"></div></div>
+        <div class="pct">92%</div>
+      </div>
+      <div class="stat-card">
+        <div class="head"><span class="title">民意ゲージ</span><span class="icon">🏛️</span></div>
+        <div class="note">ふつう</div>
+        <div class="glass-progress"><div class="progress-fill fill-orange" style="width:63%"></div></div>
+        <div class="pct">63%</div>
+      </div>
+      <div class="stat-card">
+        <div class="head"><span class="title">愛着度</span><span class="icon">❤️</span></div>
+        <div class="note">カニ</div>
+        <div class="glass-progress"><div class="progress-fill fill-pink" style="width:72%"></div></div>
+        <div class="pct">72%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Progress Bar -->
+  <section class="section">
+    <h2><span class="num">5</span> Progress Bar（プログレスバー）</h2>
+    <div class="progress-demo">
+      <div class="line"><span class="lbl">グリーン（満腹度）</span><span class="bar glass-progress"><span class="progress-fill fill-green" style="width:78%"></span></span><span class="val">78%</span></div>
+      <div class="line"><span class="lbl">ブルー（水質）</span><span class="bar glass-progress"><span class="progress-fill fill-blue" style="width:92%"></span></span><span class="val">92%</span></div>
+      <div class="line"><span class="lbl">オレンジ（民意）</span><span class="bar glass-progress"><span class="progress-fill fill-orange" style="width:63%"></span></span><span class="val">63%</span></div>
+      <div class="line"><span class="lbl">ピンク（愛着度）</span><span class="bar glass-progress"><span class="progress-fill fill-pink" style="width:72%"></span></span><span class="val">72%</span></div>
+    </div>
+  </section>
+
+  <!-- 6,7,8 横並び -->
+  <div class="row" style="gap:40px;align-items:flex-start">
+    <section class="section">
+      <h2><span class="num">6</span> News Badge</h2>
+      <div class="row" style="align-items:center">
+        <span style="font-size:24px">🦐</span>
+        <span class="news-badge">エビニュース24</span>
+        <span class="news-badge small">NEWS 24</span>
+      </div>
+    </section>
+    <section class="section">
+      <h2><span class="num">7</span> Toggle Switch</h2>
+      <div class="row" style="align-items:center;gap:20px">
+        <div style="text-align:center"><div class="toggle-switch on" data-toggle><div class="knob"></div></div><div class="sub-label" style="margin-top:5px">ON</div></div>
+        <div style="text-align:center"><div class="toggle-switch" data-toggle><div class="knob"></div></div><div class="sub-label" style="margin-top:5px">OFF</div></div>
+      </div>
+    </section>
+    <section class="section">
+      <h2><span class="num">8</span> Chip / Tag</h2>
+      <div class="row" style="align-items:center">
+        <span class="chip">グルメ</span>
+        <span class="chip green">お知らせ</span>
+        <span class="chip purple">イベント</span>
+        <span class="chip orange">⚠️ 重要</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- 9. Bottom Navigation -->
+  <section class="section">
+    <h2><span class="num">9</span> Bottom Navigation（ボトムナビ）</h2>
+    <div class="bottom-tab-bar" id="tabbar">
+      <div class="tab-item active"><div class="ic">🐠</div><div class="lbl">水槽</div></div>
+      <div class="tab-item"><div class="ic">🍚</div><div class="lbl">おせわ</div></div>
+      <div class="tab-item"><div class="ic">🎮</div><div class="lbl">あそぶ</div></div>
+      <div class="tab-item"><div class="ic">📖</div><div class="lbl">図鑑</div></div>
+      <div class="tab-item"><div class="ic">🛒</div><div class="lbl">ショップ</div><span class="dot"></span></div>
+    </div>
+  </section>
+
+  <!-- 10. Modal -->
+  <section class="section">
+    <h2><span class="num">10</span> Modal / Popup（モーダル）</h2>
+    <button class="glass-button" id="openModal" style="margin-bottom:14px">モーダルを開く</button>
+    <div class="modal-demo-wrap">
+      <div class="glass-modal" id="inlineModal">
+        <div class="close">✕</div>
+        <div class="title">ログインボーナス</div>
+        <div class="desc">毎日ログインで報酬GET！</div>
+        <div class="rewards">
+          <div class="reward"><span class="e">🐚</span><span class="q">×100</span></div>
+          <div class="reward"><span class="e">🪙</span><span class="q">×300</span></div>
+          <div class="reward"><span class="e">🎁</span><span class="q">×1</span></div>
+        </div>
+        <button class="glass-button" style="width:100%">🎀 受け取る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. Icon Set -->
+  <section class="section">
+    <h2><span class="num">11</span> Icon Set（アイコンセット例）</h2>
+    <div class="row" style="gap:10px">
+      <span class="icon-chip">🌡️</span><span class="icon-chip">😊</span><span class="icon-chip">💧</span>
+      <span class="icon-chip">🏛️</span><span class="icon-chip">❤️</span><span class="icon-chip">⭐</span>
+      <span class="icon-chip">📅</span><span class="icon-chip">⚙️</span><span class="icon-chip">🎵</span>
+    </div>
+  </section>
+
+  <!-- 12. Decorative Bubble -->
+  <section class="section">
+    <h2><span class="num">12</span> Decorative Bubble（装飾用の泡・JS生成）</h2>
+    <div class="deco-bubble-stage" id="decoStage"></div>
+  </section>
+
+  <!-- 13. List Item -->
+  <section class="section">
+    <h2><span class="num">13</span> List Item（リストアイテム）</h2>
+    <div class="list-item"><span class="e">🐠</span><span class="txt">クマノミがごはんを食べました</span><span class="time">08:30</span><span class="chev">›</span></div>
+    <div class="list-item"><span class="e">🦀</span><span class="txt">カニが横歩きの練習をしています</span><span class="time">08:21</span><span class="chev">›</span></div>
+    <div class="list-item"><span class="e">🪼</span><span class="txt">クラゲがふわふわ漂っています</span><span class="time">08:10</span><span class="chev">›</span></div>
+  </section>
+
+</div>
+
+<!-- モーダルオーバーレイ（JSで表示） -->
+<div id="modalOverlay" style="position:fixed;inset:0;background:rgba(0,10,30,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px"></div>
+
+<script>
+/* ============================================================
+   Aquarium Life UI — animation system (Vanilla JS)
+   - bubble burst（泡が弾けて粒子が散る）
+   - toggle switch
+   - bottom tab 切替
+   - decorative bubble 生成
+   - modal popup
+   ============================================================ */
+
+/* ---- 1. Bubble Button: クリックで弾けて粒子が散る ---- */
+function burstBubble(el) {
+  // すでに弾けてたら無視
+  if (el.classList.contains('popping')) return;
+  var rect = el.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top + rect.height / 2;
+
+  // 散る粒子を8個生成
+  for (var i = 0; i < 8; i++) {
+    var p = document.createElement('div');
+    p.className = 'burst-particle';
+    var size = 6 + Math.random() * 8;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = (cx - size / 2) + 'px';
+    p.style.top = (cy - size / 2) + 'px';
+    p.style.position = 'fixed';
+    p.style.zIndex = 200;
+    var ang = (i / 8) * Math.PI * 2;
+    var dist = 40 + Math.random() * 30;
+    p.style.setProperty('--bx', Math.cos(ang) * dist + 'px');
+    p.style.setProperty('--by', Math.sin(ang) * dist + 'px');
+    document.body.appendChild(p);
+    // アニメ後に削除
+    setTimeout((function (node) { return function () { node.remove(); }; })(p), 650);
+  }
+
+  // 本体を弾けさせて、少ししたら復活
+  el.classList.add('popping');
+  setTimeout(function () {
+    el.classList.remove('popping');
+  }, 460);
+}
+// data-bubble の付いた泡だけクリック可能に
+document.querySelectorAll('[data-bubble]').forEach(function (b) {
+  b.addEventListener('click', function () { burstBubble(b); });
+});
+
+/* ---- 2. Toggle Switch ---- */
+document.querySelectorAll('[data-toggle]').forEach(function (t) {
+  t.addEventListener('click', function () { t.classList.toggle('on'); });
+});
+
+/* ---- 3. Bottom Tab 切替 ---- */
+(function () {
+  var bar = document.getElementById('tabbar');
+  if (!bar) return;
+  bar.querySelectorAll('.tab-item').forEach(function (item) {
+    item.addEventListener('click', function () {
+      bar.querySelectorAll('.tab-item').forEach(function (i) { i.classList.remove('active'); });
+      item.classList.add('active');
+    });
+  });
+})();
+
+/* ---- 4. Decorative Bubble 生成（10〜25個・上昇＋横揺れ） ---- */
+(function () {
+  var stage = document.getElementById('decoStage');
+  if (!stage) return;
+  var count = 18; // 10〜25
+  for (var i = 0; i < count; i++) {
+    spawnDecoBubble(stage);
+  }
+  function spawnDecoBubble(parent) {
+    var b = document.createElement('div');
+    b.className = 'deco-bubble';
+    var size = 8 + Math.random() * 22;        // 8〜30px
+    var dur = 6 + Math.random() * 14;          // 6〜20秒
+    var delay = Math.random() * dur;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (Math.random() * 100) + '%';
+    b.style.animation = 'decoRise ' + dur + 's linear ' + (-delay) + 's infinite';
+    parent.appendChild(b);
+  }
+})();
+// 装飾泡のキーフレームを動的に追加（上昇＋ゆらゆら）
+(function () {
+  var style = document.createElement('style');
+  style.textContent =
+    '@keyframes decoRise {' +
+    '  0%   { transform: translate(0, 0) scale(1);     opacity: 0; }' +
+    '  12%  { opacity: 0.8; }' +
+    '  50%  { transform: translate(14px, -110px) scale(1.05); }' +
+    '  88%  { opacity: 0.7; }' +
+    '  100% { transform: translate(-10px, -210px) scale(0.95); opacity: 0; }' +
+    '}';
+  document.head.appendChild(style);
+})();
+
+/* ---- 5. Modal Popup ---- */
+(function () {
+  var overlay = document.getElementById('modalOverlay');
+  var inline = document.getElementById('inlineModal');
+  var openBtn = document.getElementById('openModal');
+  if (!overlay || !inline || !openBtn) return;
+
+  openBtn.addEventListener('click', function () {
+    // インラインモーダルを複製してオーバーレイに表示
+    var clone = inline.cloneNode(true);
+    clone.classList.add('animate');
+    clone.style.maxWidth = '420px';
+    clone.style.width = '100%';
+    overlay.innerHTML = '';
+    overlay.appendChild(clone);
+    overlay.style.display = 'flex';
+    // 閉じる
+    clone.querySelector('.close').addEventListener('click', closeModal);
+  });
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeModal();
+  });
+  function closeModal() { overlay.style.display = 'none'; overlay.innerHTML = ''; }
+})();
+
+/* ---- 6. インラインモーダルの閉じるボタン（デモ用・消さない） ---- */
+document.querySelectorAll('#inlineModal .close').forEach(function (c) {
+  c.addEventListener('click', function () {
+    c.closest('.glass-modal').style.opacity = '0.4';
+    setTimeout(function () { c.closest('.glass-modal').style.opacity = '1'; }, 600);
+  });
+});
+</script>
+</body>
+</html>
