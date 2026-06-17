@@ -12,7 +12,6 @@
 <meta name="apple-mobile-web-app-title" content="アクアリウムライフ"/>
 <meta name="application-name" content="アクアリウムライフ"/>
 <meta name="theme-color" content="#0D1B4C"/>
-<!-- build: 202606170018 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -3177,7 +3176,7 @@ function AquariumLife3D() {
       onChange: (e) => changeDanceVol(Number(e.target.value)),
       style: { width: 60, accentColor: "#ff8a5c" }
     }
-  )))), !standby && /* @__PURE__ */ React.createElement("div", { style: styles.newsBar }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "shrimpTalk .16s ease-in-out infinite alternate", fontSize: 18, flex: "0 0 auto" } }, "🦐"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, flex: "0 0 auto" } }, "🎙️"), /* @__PURE__ */ React.createElement("span", { style: styles.newsLabel }, "エビニュース24"), /* @__PURE__ */ React.createElement("span", { style: { ...styles.newsText, color: takoComment ? "#ffd0a0" : "#e0f0ff" } }, takoComment ? "🐙 " + takoComment : newsText)), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
+  )))), !standby && /* @__PURE__ */ React.createElement("div", { style: styles.newsBar }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", animation: "shrimpTalk .16s ease-in-out infinite alternate", fontSize: 18, flex: "0 0 auto" } }, "🦐"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, flex: "0 0 auto" } }, "🎙️"), /* @__PURE__ */ React.createElement("span", { style: styles.newsLabel }, "エビニュース24"), takoComment ? /* @__PURE__ */ React.createElement("span", { key: takoComment, style: { ...styles.newsText, color: "#ffd0a0", animation: "fadeIn .4s ease" } }, "🐙 ", takoComment) : /* @__PURE__ */ React.createElement("span", { key: newsText, style: styles.newsText }, newsText)), !standby && welcome && /* @__PURE__ */ React.createElement("div", { style: styles.welcome, onClick: () => setWelcome(null) }, welcome, " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.7, fontSize: 12 } }, "（タップで閉じる）")), standby && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", margin: "8px 0 14px", animation: "fadeIn .3s ease" } }, /* @__PURE__ */ React.createElement(
     "div",
     {
       onClick: cycleClock,
@@ -3515,14 +3514,15 @@ const styles = {
   newsBar: {
     display: "flex",
     alignItems: "center",
-    gap: 7,
-    background: "rgba(22,58,105,0.94)",
-    border: "1px solid rgba(140,195,240,0.55)",
-    boxShadow: "0 4px 18px rgba(0,20,50,.35), inset 0 1.5px 0 rgba(255,255,255,0.22)",
-    borderRadius: 16,
-    padding: "10px 12px",
-    margin: "0 0 10px",
-    minHeight: 44
+    gap: 6,
+    background: "linear-gradient(135deg, rgba(20,55,95,0.82) 0%, rgba(15,40,80,0.88) 100%)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    border: "1px solid rgba(120,180,230,0.35)",
+    boxShadow: "0 4px 16px rgba(0,20,50,.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+    borderRadius: 14,
+    padding: "8px 10px",
+    margin: "0 0 10px"
   },
   newsLabel: {
     fontSize: 9,
@@ -3535,7 +3535,7 @@ const styles = {
     flex: "0 0 auto",
     marginRight: 2
   },
-  newsText: { fontSize: 11.5, lineHeight: 1.55, flex: 1, color: "#e0f0ff" },
+  newsText: { fontSize: 11, lineHeight: 1.55, flex: 1, color: "#e0f0ff", animation: "fadeIn .4s ease" },
   welcome: {
     background: "rgba(255,220,80,0.22)",
     border: "1px solid rgba(255,220,80,.3)",
